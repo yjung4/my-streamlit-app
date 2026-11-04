@@ -65,3 +65,148 @@ if submit:
         # 응답 출력
         st.subheader("AI 답변")
         st.write(answer)
+
+        # 체크리스트 구현
+        st.set_page_config(
+    page_title="업무 체크리스트",
+    page_icon="📋",
+    layout="centered"
+)
+
+st.title("📋 김 대리의 업무 체크리스트")
+st.write("회의록을 요약하고 김 대리의 업무를 관리합니다.")
+
+# 역할 부여
+sys_role = """
+당신은 김 대리의 개인 비서 '에이블'입니다.
+김 대리가 요청한 업무를 정확하고 성실하게 처리합니다.
+회의록에 명시된 정보만 사용합니다.
+담당자나 기한을 임의로 만들어내지 않습니다.
+김 대리에게 배정된 업무와 다른 참석자의 업무를 구분합니다.
+"""
+
+# 업무 목록 초기화
+if "tasks" not in st.session_state:
+  st.session_state.tasks=[]
+
+if "summary" not in st.session_state:
+  st.session_state.summary=""
+
+# 회의록 업로드
+uploaded_file = st.file_uploader(
+    "회의록 파일을 업로드하세요",
+    type=["txt"]
+)
+
+# 회의 내용 요약 및 업무 추출
+if uploaded_file is not None:
+  meeting_text= uploaded_file.getvalue().decode("utf-8")
+
+  if st.button("회의록 분석하기"):
+    with st.spinner("에이블이 회의록을 분석하고 있습니다..."):
+      prompt=f"""
+      다음 회의록을 읽고 한국어로 간결하게 요약하세요.
+
+      [회의록]
+      {meeting_text}
+
+      [작성 원칙]
+      - 회의록에 명시된 사실만 사용하세요.
+      - 제안과 확정된 결정을 구분하세요.
+      - 담당자나 기한을 임의로 만들지 마세요.
+      - 김 대리에게 배정된 업무를 구분하세요.
+      - 중복 없이 한 페이지 이내로 작성하세요.
+
+      [출력 형식]
+
+      [미팅 요약]
+      - 핵심 회의 내용
+
+      [김 대리에게 배정된 업무]
+      1. 업무 제목
+        - 해야 할 일
+        - 기한
+      """
+
+      response=client.responses.create(
+          model="gpt-4o-mini",
+          input=[
+              {"role":"system", "content":sys_role},
+              {"role":"user", "content": prompt}
+          ]
+      )
+
+      #회의 요약 저장
+      st.session_state.summary=response.output_text
+
+      #요약에서 김대리 업무 추출
+      task_response=client.responses.create(
+          model="gpt-4o-mini",
+          input=f"""
+          다음 회의 요약에서 김 대리에게 배정된 업무 제목만 추출하세요.
+
+          [회의 요약]
+          {response.output_text}
+
+          [규칙]
+          - 김 대리의 업무만 추출하세요.
+          - 다른 사람의 업무는 제외하세요.
+          - 제안만 된 사항은 확정 업무로 만들지 마세요.
+          - 업무가 없다면 빈 리스트를 반환하세요.
+          - 반드시 JSON 형식으로 답변하세요.
+
+          {{"tasks": ["업무1", "업무2"]}}
+          """,
+          text={"format": {"type": "json_object"}}
+            )
+      
+      # JSON을 파이썬 리스트로 변환
+      extracted_tasks = json.loads(
+          task_response.output_text
+      )["tasks"]
+
+      # 기존 업무와 중복되지 않는 업무만 추가
+      for task in extracted_tasks:
+          if task not in st.session_state.tasks:
+              st.session_state.tasks.append(task)
+
+    st.success("회의록 분석이 완료되었습니다!")
+
+# 회의 요약 표시
+if st.session_state.summary:
+  st.divider()
+  st.subheader("회의 요약")
+
+  st.write(st.session_state.summary)
+
+# 체크리스트
+
+st.divider()
+st.subheader("✅ 김 대리의 업무 체크리스트")
+
+completed=0
+
+for i, task in enumerate(st.session_state.tasks):
+  if st.checkbox(task, key=f"task_{i}"):
+    completed += 1
+
+# 진행률 표시
+total=len(st.session_state.tasks)
+st.progress(completed/total if total else 0)
+st.write(f"완료한 업무:{completed}/{total}개")
+
+#새로운 업무 추가
+st.divider()
+st.subheader("업무 추가")
+
+new_task=st.text_input("새로운 업무 입력")
+
+if st.button("업무 추가"):
+  if new_task.strip():
+    if new_taks.strip() not in st.session_state.tasks:
+      st.session_state.tasks.append(new_task.strip())
+      st.rerun()
+    else:
+      st.warning("이미 등록된 업무입니다.")
+  else:
+    st.warning("업무를 입력해주세요.")
