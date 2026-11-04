@@ -223,7 +223,7 @@ with st.form("calendar_form"):
   task_name=st.selectbox(
       "캘린더에 등록할 업무",
       options=st.session_state.tasks
-  ) if st.sesion_state.tasks else None
+  ) if st.session_state.tasks else None
   deadline=st.date_input("마감일", value=date.today())
   submitted=st.form_submit_button("캘린더에 등록")
 
