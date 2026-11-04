@@ -65,13 +65,11 @@ if submit:
         # 응답 출력
         st.subheader("AI 답변")
         st.write(answer)
-
-        # 체크리스트 구현
-        st.set_page_config(
-    page_title="업무 체크리스트",
-    page_icon="📋",
-    layout="centered"
-)
+# 체크리스트 구현
+st.set_page_config(
+page_title="업무 체크리스트",
+page_icon="📋",
+layout="centered")
 
 st.title("📋 김 대리의 업무 체크리스트")
 st.write("회의록을 요약하고 김 대리의 업무를 관리합니다.")
