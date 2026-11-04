@@ -11,6 +11,26 @@ client = OpenAI()
 # 페이지 설정
 st.set_page_config(page_title="AIVLE | AI 개인비서", page_icon="✦", layout="wide")
 
+with open("Aivle_banner.png", "rb") as f:
+    encoded_image = base64.b64encode(f.read()).decode()
+
+st.markdown(f"""
+<style>
+.aivle-banner {{
+    width: 100%;
+    max-height: 360px;
+    object-fit: contain;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, #10283A, #164A57);
+    padding: 12px;
+}}
+</style>
+
+<img class="aivle-banner"
+     src="data:image/png;base64,{encoded_image}">
+""", unsafe_allow_html=True)
+
 # 디자인 테마: 기존 기능은 유지하고 화면 스타일만 변경
 st.markdown("""
 <style>
