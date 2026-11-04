@@ -137,7 +137,7 @@ if uploaded_file is not None:
 
   
   [출력 형식]
-  
+
   [미팅 요약]
   - 회의록에 실제로 나온 주제만 골라, 주제별로 한 줄씩 씁니다.
   - 확정된 내용과 의견·검토 사항을 구분합니다.
@@ -203,7 +203,7 @@ if uploaded_file is not None:
           "tasks": [
             {{
               "title": "업무1",
-              "deadline": "2026-11-10"
+              "deadline": YYYY-MM-DD
             }},
             {{
               "title": "업무2",
