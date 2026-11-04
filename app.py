@@ -207,7 +207,7 @@ if uploaded_file is not None:
               existing=[
                   event
                   for event in st.session_state.calendar_tasks
-                  if event["title"] == taks_name
+                  if event["title"] == task_name
               ]
 
               if not existing:
@@ -217,7 +217,7 @@ if uploaded_file is not None:
                     "allDay":True
                 }
                 )
-              except (ValueError,TypeError):
+            except (ValueError,TypeError):
                   pass
 
     st.success("회의록 분석이 완료되었습니다!")
