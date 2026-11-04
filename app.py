@@ -2,6 +2,8 @@
 import os, base64, json, requests
 import streamlit as st
 from openai import OpenAI
+from datetime import date, datetime
+from streamlit_calendar import calendar 
 
 # OpenAI 클라이언트 생성
 client = OpenAI()
@@ -65,11 +67,8 @@ if submit:
         # 응답 출력
         st.subheader("AI 답변")
         st.write(answer)
+
 # 체크리스트 구현
-st.set_page_config(
-page_title="업무 체크리스트",
-page_icon="📋",
-layout="centered")
 
 st.title("📋 김 대리의 업무 체크리스트")
 st.write("회의록을 요약하고 김 대리의 업무를 관리합니다.")
@@ -89,6 +88,16 @@ if "tasks" not in st.session_state:
 
 if "summary" not in st.session_state:
   st.session_state.summary=""
+
+# 캘린더 목록 초기
+if "calendar_tasks" not in st.session_state:
+    st.session_state.calendar_tasks = []
+
+meeting_date=st.date_input(
+    "회의 날짜를 선택하세요",
+    value=date.today()
+)
+
 
 # 회의록 업로드
 uploaded_file = st.file_uploader(
@@ -141,22 +150,43 @@ if uploaded_file is not None:
       task_response=client.responses.create(
           model="gpt-4o-mini",
           input=f"""
-          다음 회의 요약에서 김 대리에게 배정된 업무 제목만 추출하세요.
+          다음 회의 요약에서 김 대리에게 배정된 업무와 마감일을 추출하세요.
 
           [회의 요약]
           {response.output_text}
+
+          [회의 날짜]
+          {meeting_date.isoformat()}
+
+          [회의록]
+          {meeting_text}
 
           [규칙]
           - 김 대리의 업무만 추출하세요.
           - 다른 사람의 업무는 제외하세요.
           - 제안만 된 사항은 확정 업무로 만들지 마세요.
           - 업무가 없다면 빈 리스트를 반환하세요.
+          마감일이 없으면 null로 표시하세요.
+          - 마감일은 YYYY-MM-DD 형식으로 작성하세요.
+          - '다음 주 금요일' 등의 표현은 회의 날짜를 기준으로 계산하세요.
+          - 날짜가 모호하면 임의로 만들지 마세요.
           - 반드시 JSON 형식으로 답변하세요.
 
-          {{"tasks": ["업무1", "업무2"]}}
-          """,
+         {{
+          "tasks": [
+            {{
+              "title": "업무1",
+              "deadline": "2026-11-10"
+            }},
+            {{
+              "title": "업무2",
+              "deadline": null
+            }}
+          ]
+        }}
+        """,
           text={"format": {"type": "json_object"}}
-            )
+        )
       
       # JSON을 파이썬 리스트로 변환
       extracted_tasks = json.loads(
@@ -165,8 +195,30 @@ if uploaded_file is not None:
 
       # 기존 업무와 중복되지 않는 업무만 추가
       for task in extracted_tasks:
-          if task not in st.session_state.tasks:
-              st.session_state.tasks.append(task)
+          task_name=task["title"]
+          task_deadline=task.get("deadline")
+
+          if task_name not in st.session_state.tasks:
+            st.session_state.tasks.append(task_name)
+          if task_deadline:
+            try:
+              valid_date=date.fromisoformat(task_deadline)
+
+              existing=[
+                  event
+                  for event in st.session_state.calendar_tasks
+                  if event["title"] == taks_name
+              ]
+
+              if not existing:
+                st.session_state.calendar_tasks.append({
+                    "title":task_name,
+                    "start": valid_date.isoformat(),
+                    "allDay":True
+                }
+                )
+                except (ValueError,TypeError):
+                  pass
 
     st.success("회의록 분석이 완료되었습니다!")
 
@@ -210,14 +262,9 @@ if st.button("업무 추가"):
     st.warning("업무를 입력해주세요.")
 
 # streamlit calendar 구현
-from streamlit_calendar import calendar
-from datetime import date
 
 st.divider()
 st.title("📅 김 대리의 업무 캘린더")
-
-if "calendar_tasks" not in st.session_state:
-  st.session_state.calendar_tasks=[]
 
 with st.form("calendar_form"):
   task_name=st.selectbox(
@@ -225,18 +272,29 @@ with st.form("calendar_form"):
       options=st.session_state.tasks
   ) if st.session_state.tasks else None
   deadline=st.date_input("마감일", value=date.today())
-  submitted=st.form_submit_button("캘린더에 등록")
+  submitted=st.form_submit_button("캘린더에 등록/날짜 수정")
 
   if submitted:
     if task_name:
-      st.session_state.calendar_tasks.append({
-          "title":task_name,
-          "start":deadline.isoformat(),
-          "allDay":True
-      })
-      st.succes("캘린더에 등록되었습니다.")
-    else:
-      st.warning("업무명을 입력해주세요.")
+      existing=[
+          event
+          for event in st.session_state.calendar_tasks
+          if event["title"] == task_name
+      ]
+
+      if existing:
+        existing[0]["start"] = deadline.isoformat()
+        st.success("캘린더 날짜가 수정되었습니다.")
+      else:
+        st.session_state.calendar_tasks.append({
+            "title":task_name.
+            "start":deadline.isoformat(),
+            "allDay":True
+        })
+        st.success("캘린더에 등록되었습니다.")
+      else:
+        st.warning("업무명을 입력해주세요.")
+        
 # 캘린더 표시
 calendar(
     events=st.session_state.calendar_tasks,
