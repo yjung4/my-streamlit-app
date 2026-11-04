@@ -9,9 +9,72 @@ from streamlit_calendar import calendar
 client = OpenAI()
 
 # 페이지 설정
-st.set_page_config(page_title="음성 AI 서비스", page_icon="🤖", layout="wide")
-st.title("음성 인식 AI 서비스")
-st.write("음성으로 질문하시면 답변해 드립니다.")
+st.set_page_config(page_title="AIVLE | AI 개인비서", page_icon="✦", layout="wide")
+
+# 디자인 테마: 기존 기능은 유지하고 화면 스타일만 변경
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+:root { --navy:#132E40; --mint:#16A991; --pale:#F3F7FA; }
+html, body, [class*="css"], [data-testid="stAppViewContainer"] {
+    font-family:'DM Sans','Noto Sans KR',sans-serif;
+}
+.stApp { background: #F3F7FA; color:#203A4B; }
+.block-container { padding-top:1.8rem; padding-bottom:3rem; max-width:1500px; }
+[data-testid="stHeader"] { background:transparent; }
+h1,h2,h3 { color:#132E40 !important; letter-spacing:-0.035em; }
+h1 { font-size:1.7rem !important; }
+h2,h3 { font-size:1.2rem !important; }
+[data-testid="stVerticalBlockBorderWrapper"] > div {
+    border-radius:18px !important;
+}
+[data-testid="stForm"], [data-testid="stFileUploader"],
+[data-testid="stChatMessage"] {
+    border-radius:16px !important;
+}
+.stButton > button[kind="primary"], .stFormSubmitButton > button {
+    background:#16A991; color:white; border:0; border-radius:12px;
+    font-weight:700; padding:0.6rem 1.2rem;
+}
+.stButton > button:hover, .stFormSubmitButton > button:hover {
+    border-color:#138C79; color:#138C79;
+}
+[data-testid="stProgressBar"] > div > div > div { background:#16A991; }
+[data-testid="stChatInput"] { border-radius:14px; }
+.aivle-top { display:flex; align-items:center; justify-content:space-between;
+    padding:8px 0 20px; }
+.aivle-brand { font-weight:800; font-size:25px; letter-spacing:-1px; color:#132E40; }
+.aivle-brand span { color:#16A991; }
+.aivle-tag { font-size:11px; color:#718997; font-weight:700; letter-spacing:2px; }
+.aivle-pill { border-radius:99px; background:#DFF5EE; color:#118C76;
+    padding:8px 14px; font-size:12px; font-weight:700; }
+.aivle-hero { background:linear-gradient(115deg,#132E40,#1D4B56);
+    border-radius:24px; padding:32px 38px; margin-bottom:26px;
+    box-shadow:0 14px 30px rgba(16,43,58,.12); }
+.aivle-eyebrow { color:#79E3C9; font-size:11px; font-weight:800;
+    letter-spacing:2px; margin-bottom:10px; }
+.aivle-hero h1 { color:white !important; font-size:34px !important;
+    font-weight:800; margin:0 0 9px; }
+.aivle-hero p { color:#D1E1E7; font-size:14px; margin:0; }
+.aivle-section { color:#132E40; font-size:12px; font-weight:800;
+    letter-spacing:1px; margin:14px 0 8px; }
+@media(max-width:760px) {
+    .aivle-hero { padding:24px; }
+    .aivle-hero h1 { font-size:26px !important; }
+    .aivle-pill { display:none; }
+}
+</style>
+<div class="aivle-top">
+  <div><div class="aivle-brand">✦ AIV<span>LE</span></div>
+       <div class="aivle-tag">YOUR AI WORKSPACE</div></div>
+  <div class="aivle-pill">● AI ASSISTANT</div>
+</div>
+<div class="aivle-hero">
+  <div class="aivle-eyebrow">SMART WORKSPACE</div>
+  <h1>Your work, simplified.</h1>
+  <p>회의 요약부터 업무 관리까지, 에이블이 당신의 하루를 더 스마트하게 만듭니다.</p>
+</div>
+""", unsafe_allow_html=True)
 
 # 역할 지정
 sys_role = """
@@ -23,9 +86,10 @@ sys_role = """
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-left_col, right_col = st.columns([2, 1], gap="large")
+left_col, right_col = st.columns([1.8, 1.2], gap="large")
 
 with left_col:
+    st.markdown('<div class="aivle-section">WORK MANAGEMENT</div>', unsafe_allow_html=True)
     # 지시 영역
     with st.form("task_form"):
         uploaded_file = st.file_uploader("텍스트 파일 업로드", type=["txt"])
@@ -337,6 +401,7 @@ with left_col:
     )
 
 with right_col:
+    st.markdown('<div class="aivle-section">AI ASSISTANT</div>', unsafe_allow_html=True)
     st.subheader("💬 AIVLE AI 챗봇")
     st.caption("에이블에게 무엇이든 물어보세요!")
 
