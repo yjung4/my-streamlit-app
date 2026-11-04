@@ -1,4 +1,3 @@
-%pip install streamlit-calendar
 
 import os, base64, json, requests
 import streamlit as st
