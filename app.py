@@ -253,7 +253,7 @@ new_task=st.text_input("새로운 업무 입력")
 
 if st.button("업무 추가"):
   if new_task.strip():
-    if new_taks.strip() not in st.session_state.tasks:
+    if new_task.strip() not in st.session_state.tasks:
       st.session_state.tasks.append(new_task.strip())
       st.rerun()
     else:
@@ -287,19 +287,19 @@ with st.form("calendar_form"):
         st.success("캘린더 날짜가 수정되었습니다.")
       else:
         st.session_state.calendar_tasks.append({
-            "title":task_name.
+            "title":task_name,
             "start":deadline.isoformat(),
             "allDay":True
         })
         st.success("캘린더에 등록되었습니다.")
-      else:
+    else:
         st.warning("업무명을 입력해주세요.")
 
 # 캘린더 표시
 calendar(
     events=st.session_state.calendar_tasks,
     options={
-        "initicalView":"dayGridMonth",
+        "initialView":"dayGridMonth",
         "locale":"ko",
         "height":550
     },
