@@ -67,6 +67,64 @@ if submit:
         # 응답 출력
         st.subheader("AI 답변")
         st.write(answer)
+        
+# AI 텍스트 챗봇 구현
+
+st.divider()
+st.title("💬 AIVLE AI 챗봇")
+st.write("에이블에게 궁금한 점이나 필요한 업무를 물어보세요!")
+
+# 챗봇 역할 설정
+chatbot_role = """
+당신은 AI 개인비서 '에이블(AIVLE)'입니다.
+
+사용자의 질문에 친절하고 정확하게 답변하세요.
+업무 정리, 일정 계획, 문서 작성, 정보 설명 등을 도와주세요.
+답변은 이해하기 쉽고 간결하게 작성하세요.
+사용자가 요청하지 않은 업무나 일정을 임의로 생성하지 마세요.
+"""
+
+# 기존 대화 출력
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# 사용자 텍스트 입력
+if user_input := st.chat_input("에이블에게 메시지를 입력하세요..."):
+
+    # 사용자 메시지 저장
+    st.session_state.messages.append({
+        "role": "user",
+        "content": user_input
+    })
+
+    # 사용자 메시지 출력
+    with st.chat_message("user"):
+        st.markdown(user_input)
+
+    # AI 답변 생성
+    with st.chat_message("assistant"):
+        with st.spinner("에이블이 답변을 작성하고 있습니다..."):
+
+            response = client.responses.create(
+                model="gpt-4o-mini",
+                input=[
+                    {
+                        "role": "system",
+                        "content": chatbot_role
+                    },
+                    *st.session_state.messages
+                ]
+            )
+
+            answer = response.output_text
+            st.markdown(answer)
+
+    # AI 답변 저장
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": answer
+    })
 
 # 체크리스트 구현
 
