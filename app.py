@@ -203,7 +203,7 @@ if uploaded_file is not None:
           "tasks": [
             {{
               "title": "업무1",
-              "deadline": YYYY-MM-DD
+              "deadline": "YYYY-MM-DD"
             }},
             {{
               "title": "업무2",
