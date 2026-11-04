@@ -217,7 +217,7 @@ if uploaded_file is not None:
                     "allDay":True
                 }
                 )
-                except (ValueError,TypeError):
+              except (ValueError,TypeError):
                   pass
 
     st.success("회의록 분석이 완료되었습니다!")
@@ -294,7 +294,7 @@ with st.form("calendar_form"):
         st.success("캘린더에 등록되었습니다.")
       else:
         st.warning("업무명을 입력해주세요.")
-        
+
 # 캘린더 표시
 calendar(
     events=st.session_state.calendar_tasks,
