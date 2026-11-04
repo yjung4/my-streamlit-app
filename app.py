@@ -1,3 +1,4 @@
+%pip install streamlit-calendar
 
 import os, base64, json, requests
 import streamlit as st
@@ -208,3 +209,42 @@ if st.button("업무 추가"):
       st.warning("이미 등록된 업무입니다.")
   else:
     st.warning("업무를 입력해주세요.")
+
+# streamlit calendar 구현
+from streamlit_calendar import calendar
+from datetime import date
+
+st.divider()
+st.title("📅 김 대리의 업무 캘린더")
+
+if "calendar_tasks" not in st.session_state:
+  st.session_state.calendar_tasks=[]
+
+with st.form("calendar_form"):
+  task_name=st.selectbox(
+      "캘린더에 등록할 업무",
+      options=st.session_state.tasks
+  ) if st.sesion_state.tasks else None
+  deadline=st.date_input("마감일", value=date.today())
+  submitted=st.form_submit_button("캘린더에 등록")
+
+  if submitted:
+    if task_name:
+      st.session_state.calendar_tasks.append({
+          "title":task_name,
+          "start":deadline.isoformat(),
+          "allDay":True
+      })
+      st.succes("캘린더에 등록되었습니다.")
+    else:
+      st.warning("업무명을 입력해주세요.")
+# 캘린더 표시
+calendar(
+    events=st.session_state.calendar_tasks,
+    options={
+        "initicalView":"dayGridMonth",
+        "locale":"ko",
+        "height":550
+    },
+    key="work_calendar"
+)
