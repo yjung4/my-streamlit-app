@@ -11,7 +11,7 @@ client = OpenAI()
 # 페이지 설정
 st.set_page_config(page_title="AIVLE | AI 개인비서", page_icon="✦", layout="wide")
 
-with open("Aivle_banner.png", "rb") as f:
+with open("Aivle_banner", "rb") as f:
     encoded_image = base64.b64encode(f.read()).decode()
 
 st.markdown(f"""
