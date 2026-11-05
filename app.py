@@ -1630,6 +1630,11 @@ html,body,.stApp,button,input,textarea{font-family:'Pretendard','Malgun Gothic',
 .fc .fc-button-primary{background:#64b0a6!important;border-color:#64b0a6!important}
 .fc .fc-day-today{background:#ecf9f6!important}
 @media(max-width:950px){.block-container{padding:1.2rem 1rem 6rem}.hero-title{font-size:31px}.hero-sub{font-size:16px}.st-key-aivle_feature_panel{padding:14px 10px!important}.st-key-feature_meeting button,.st-key-feature_tasks button,.st-key-feature_calendar button,.st-key-feature_mail button{padding-left:68px!important}.st-key-feature_meeting button:before,.st-key-feature_tasks button:before,.st-key-feature_calendar button:before,.st-key-feature_mail button:before{left:9px;width:49px;height:49px;font-size:24px}}
+/* 첨부 영역의 파일 선택 버튼을 숨기지 않습니다. */
+[data-testid="stDialog"] [data-testid="stFileUploaderDropzone"]{display:flex!important;min-height:86px!important;background:#f1f9f8!important;border:1px dashed #9acfc7!important;border-radius:14px!important}
+[data-testid="stDialog"] [data-testid="stFileUploaderDropzone"] button{display:inline-flex!important;visibility:visible!important;font-size:13px!important;background:white!important;color:#2d766f!important;border:1px solid #a9d4ce!important;border-radius:10px!important;min-height:34px!important}
+[data-testid="stDialog"] [data-testid="stFileUploaderDropzoneInstructions"]{display:block!important}
+[data-testid="stDialog"] [role="dialog"]{overflow-y:auto!important}
 </style>
 """
 
@@ -2321,22 +2326,26 @@ def _email_file_text(uploaded):
 
 
 def render_email_composer():
-    """추천 질문 선택 후 입력을 받고, 초안만 생성하도록 AI에 전달합니다."""
+    """추천 질문 아래에서 자료를 입력하거나 파일을 첨부해 이메일 초안을 요청합니다."""
     st.markdown('**✉ 이메일 초안 작성**')
-    st.caption('업무 내용을 입력하거나 자료를 첨부해 주세요. AI가 채팅창에 제목과 본문을 작성합니다. 이메일은 발송되지 않습니다.')
+    st.caption('업무 설명 또는 참고 파일을 입력한 후 초안을 생성하세요. 실제 메일은 발송하지 않습니다.')
     with st.form('email_draft_form', clear_on_submit=False):
         details = st.text_area('업무 설명', key='email_draft_details',
-            placeholder='예: 신제품 출시 회의 결과를 팀장님께 보고하려고 해요. 주요 결정 사항과 다음 주까지 해야 할 일을 정리해 주세요.',
-            height=115)
-        uploaded = st.file_uploader('참고 자료 첨부 (선택)',
+            placeholder='예: 신제품 출시 회의 결과를 팀장님께 보고하려고 해요. 주요 결정 사항과 후속 업무를 정리해 주세요.',
+            height=95)
+        st.markdown('**📎 참고 자료 첨부**')
+        uploaded = st.file_uploader('파일 선택 · TXT / MD / DOCX / PDF',
             type=['txt','md','docx','pdf'], key='email_draft_attachment',
-            help='텍스트·Word·PDF 파일, 최대 10MB')
-        recipient = st.text_input('받는 사람 또는 대상 (선택)',
+            help='파일을 끌어다 놓거나 Browse files 버튼을 눌러 첨부하세요. 최대 10MB.',
+            label_visibility='visible')
+        if uploaded is not None:
+            st.success('첨부됨: ' + uploaded.name)
+        recipient = st.text_input('받는 사람 (선택)',
             placeholder='예: 마케팅팀 팀장님', key='email_draft_recipient')
         tone = st.selectbox('이메일 문체', ['정중하고 간결하게', '친근하고 자연스럽게', '격식 있게'],
             key='email_draft_tone')
         submitted = st.form_submit_button('✦ 이메일 초안 생성', type='primary', use_container_width=True)
-    if st.button('← 추천 질문으로 돌아가기', key='email_draft_back'):
+    if st.button('← 입력 닫기', key='email_draft_back'):
         st.session_state.email_compose_open = False
         st.rerun()
     if submitted:
@@ -2348,15 +2357,14 @@ def render_email_composer():
         if not details.strip() and not attachment_text.strip():
             st.warning('업무 설명을 입력하거나 내용을 읽을 수 있는 파일을 첨부해 주세요.')
             return
-        # 모델 입력 크기와 처리 시간을 제한합니다.
         if len(attachment_text) > 30000:
-            st.info('첨부 자료가 길어 앞부분 30,000자만 초안 작성에 사용합니다.')
+            st.info('첨부 자료의 앞부분 30,000자만 초안 작성에 사용합니다.')
             attachment_text = attachment_text[:30000]
         instruction = (
-            '다음 사용자가 제공한 자료만을 바탕으로 이메일 초안을 작성해줘. '
+            '아래 사용자가 제공한 자료만을 바탕으로 이메일 초안만 작성해줘. '
             '절대로 이메일을 발송하거나 발송 도구를 호출하지 마. '
-            '수신자, 날짜, 사실관계 등 없는 정보는 지어내지 말고 필요한 경우 [확인 필요]로 표시해. '
-            '답변은 이메일 제목과 본문을 구분해서 채팅창에 보여줘.\n'
+            '없는 정보는 지어내지 말고 [확인 필요]로 표시해. '
+            '이메일 제목과 본문을 구분해서 채팅창에 보여줘.\n'
             f'받는 사람: {recipient.strip() or "미정"}\n'
             f'문체: {tone}\n'
             f'업무 설명:\n{details.strip() or "(직접 입력 없음)"}\n'
@@ -2370,36 +2378,48 @@ def render_email_composer():
 def render_chat_content():
     if st.session_state.get('voice_error'):
         st.warning(st.session_state.pop('voice_error'))
-    if not st.session_state.messages:
+    composing = st.session_state.get('email_compose_open', False)
+    if not st.session_state.messages and not composing:
         st.markdown('안녕하세요! **AIVLE입니다. 👋**  \n회의 요약, 업무, 일정, 이메일 초안 작성을 도와드릴게요.')
-    with st.container(height=290,border=False):
-        for i,message in enumerate(st.session_state.messages):
-            with st.chat_message(message['role']):
-                st.markdown(readable_markdown(message['content']))
-                audio_id=message.get('audio_id')
-                if audio_id and audio_id in st.session_state.audio_vault:
-                    if st.button('다시 듣기',key='popup_relisten_'+str(i)):
-                        st.session_state.active_audio_id=audio_id
-                        st.session_state.autoplay_audio_id=audio_id
-                        st.rerun()
-    if st.session_state.get('email_compose_open', False):
-        render_email_composer()
-        return
-    st.caption('✉ 이메일은 업무 설명이나 자료를 첨부해 초안을 먼저 확인하세요. 실제 발송은 별도로 요청할 수 있습니다.')
+    # 이메일 입력 중에는 긴 대화 영역을 접어 첨부 버튼이 화면 아래로 밀리지 않게 합니다.
+    if composing:
+        if st.session_state.messages:
+            with st.expander('이전 대화 보기', expanded=False):
+                for message in st.session_state.messages[-8:]:
+                    with st.chat_message(message['role']):
+                        st.markdown(readable_markdown(message['content']))
+    else:
+        with st.container(height=250, border=False):
+            for i, message in enumerate(st.session_state.messages):
+                with st.chat_message(message['role']):
+                    st.markdown(readable_markdown(message['content']))
+                    audio_id = message.get('audio_id')
+                    if audio_id and audio_id in st.session_state.audio_vault:
+                        if st.button('다시 듣기', key='popup_relisten_' + str(i)):
+                            st.session_state.active_audio_id = audio_id
+                            st.session_state.autoplay_audio_id = audio_id
+                            st.rerun()
+    # 추천 질문은 이메일 작성 모드에서도 계속 표시합니다.
     st.markdown('**✦ 추천 질문**')
-    if st.button('이메일 초안 작성해줘',key='popup_suggestion_email',use_container_width=True):
+    if st.button('✉ 이메일 초안 작성해줘', key='popup_suggestion_email', use_container_width=True):
         st.session_state.email_compose_open = True
         st.rerun()
-    for i,q in enumerate(['회의록에서 할 일 찾아줘','오늘 일정 정리해줘']):
-        if st.button(q,key='popup_suggestion_'+str(i),use_container_width=True):
-            run_request(q,None)
-            st.rerun()
-    with st.form('popup_chat_form',clear_on_submit=True):
-        prompt=st.text_input('채팅 메시지',placeholder='궁금한 내용을 입력하세요...',value=st.session_state.pop('chat_prefill',''))
-        audio=st.audio_input('음성으로 요청')
-        sent=st.form_submit_button('➤ 전송',type='primary',use_container_width=True)
+    if not composing:
+        for i, q in enumerate(['회의록에서 할 일 찾아줘', '오늘 일정 정리해줘']):
+            if st.button(q, key='popup_suggestion_' + str(i), use_container_width=True):
+                run_request(q, None)
+                st.rerun()
+    if composing:
+        render_email_composer()
+        return
+    st.caption('✉ 이메일은 추천 질문을 눌러 업무 설명 또는 파일을 첨부한 뒤 초안을 생성할 수 있어요.')
+    with st.form('popup_chat_form', clear_on_submit=True):
+        prompt = st.text_input('채팅 메시지', placeholder='궁금한 내용을 입력하세요...',
+            value=st.session_state.pop('chat_prefill', ''))
+        audio = st.audio_input('음성으로 요청')
+        sent = st.form_submit_button('➤ 전송', type='primary', use_container_width=True)
     if sent and (prompt.strip() or audio is not None):
-        run_request(prompt,audio)
+        run_request(prompt, audio)
         st.rerun()
 
 
