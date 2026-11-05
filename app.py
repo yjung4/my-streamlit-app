@@ -1614,6 +1614,34 @@ html, body, .stApp, .stMarkdown, input, textarea, button, label, select { font-f
 .st-key-card_summary h1, .st-key-card_summary h2, .st-key-card_summary h3 { font-size:21px; padding:.5rem 0; }
 [data-testid="stTabs"] [aria-selected="true"] { color:#087f69; }
 [data-testid="stTabs"] [data-baseweb="tab-highlight"] { background-color:#087f69; }
+
+/* 오른쪽 아래 AIVLE 플로팅 채팅 버튼 */
+.st-key-floating_ai_chat {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 9999;
+}
+.st-key-floating_ai_chat [data-testid="stPopover"] > button {
+    width: 62px;
+    height: 62px;
+    min-height: 62px;
+    border-radius: 50%;
+    background: #e5f3ef;
+    border: 1px solid #c5e2d9;
+    box-shadow: 0 5px 20px rgba(39,94,80,.15);
+    font-size: 25px;
+    padding: 0;
+}
+.st-key-floating_ai_chat [data-testid="stPopover"] > button:hover {
+    background: #d6ece5;
+    border-color: #a6d0c3;
+}
+[data-testid="stPopoverBody"] {
+    border-radius: 18px;
+    border: 1px solid #dce9e5;
+    box-shadow: 0 12px 40px rgba(30,60,55,.12);
+}
 </style>
 """
 
@@ -1654,6 +1682,15 @@ def render_chat(placeholder):
             st.error('요청 처리에 실패했습니다. 서비스 설정과 연결 상태를 확인하세요.')
 
 
+
+
+def render_floating_chat():
+    """모든 페이지에서 오른쪽 아래 버튼으로 기존 AI 채팅을 엽니다."""
+    with st.container(key='floating_ai_chat'):
+        with st.popover('🤖', help='AIVLE AI 비서 열기'):
+            st.markdown('#### AIVLE AI 채팅')
+            st.caption('업무, 회의, 일정 등 궁금한 내용을 물어보세요.')
+            render_chat('에이블에게 궁금한 내용을 입력하세요...')
 
 
 # 페이지 이동과 연결 상태를 표시합니다. 블록 2의 발신/기본 수신 설정을 표시합니다.
@@ -1709,8 +1746,6 @@ def render_home():
             st.caption('오늘의 업무를 음성으로 확인하세요')
             briefing = st.button('업무 브리핑 듣기', disabled=not pending, use_container_width=True)
     render_meeting_context('home')
-    with st.container(border=True, key='card_chat'):
-        render_chat('예: 에이블, 회의를 요약하고 내 업무를 알려줘')
     if briefing:
         run_briefing()
 
@@ -1788,8 +1823,6 @@ def render_meetings():
             st.text_area('선택한 회의록 원문', value=meeting_text(), height=420, disabled=True, key='meeting_source_view')
         else:
             st.info('회의록을 업로드하면 원문이 표시됩니다.')
-    with st.container(border=True, key='card_chat'):
-        render_chat('예: 확정된 사항과 검토 의견을 구분해서 알려줘')
 
 
 
@@ -1996,6 +2029,7 @@ def main():
         render_meetings()
     else:
         render_home()
+    render_floating_chat()
     panel = st.session_state.get('active_dialog')
     if panel:
         open_ui_dialog(panel)
