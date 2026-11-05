@@ -1797,6 +1797,28 @@ def render_meetings():
         with st.container(border=True, key='card_summary'):
             if st.session_state.summary:
                 st.markdown(readable_markdown(st.session_state.summary))
+                st.caption('🔊 회의 요약 내용을 음성으로도 들을 수 있어요.')
+                summary_text = readable_markdown(st.session_state.summary)
+                import hashlib as _hashlib
+                summary_key = _hashlib.sha256(summary_text.encode('utf-8')).hexdigest()
+                if st.button('🔊 회의 요약 듣기', key='listen_meeting_summary', use_container_width=True):
+                    try:
+                        # TTS 요청 길이를 제한해 API 입력 한도를 초과하지 않습니다.
+                        speech_text = summary_text[:3500]
+                        if len(summary_text) > 3500:
+                            st.info('요약이 길어 앞부분부터 음성으로 재생합니다.')
+                        with st.spinner('회의 요약 음성을 생성하고 있어요...'):
+                            speech = client.audio.speech.create(
+                                model='tts-1', voice='alloy', input=speech_text,
+                                response_format='mp3'
+                            )
+                            st.session_state.meeting_summary_audio = speech.content
+                            st.session_state.meeting_summary_audio_key = summary_key
+                    except Exception as error:
+                        st.error('음성 생성에 실패했습니다. OpenAI API 설정을 확인해 주세요.')
+                if (st.session_state.get('meeting_summary_audio_key') == summary_key
+                        and st.session_state.get('meeting_summary_audio')):
+                    st.audio(st.session_state.meeting_summary_audio, format='audio/mp3')
             else:
                 st.info('회의록을 선택한 뒤 아래에서 “회의를 요약해줘”라고 요청하세요.')
     with tasks_tab:
@@ -2273,13 +2295,23 @@ def render_home():
                             f'<div><div class="metric-number">{num}건</div><div class="metric-label">{label}</div></div></div>',unsafe_allow_html=True)
     st.markdown('<div style="color:#8199a7;font-size:13px;margin:-9px 0 16px 10px">✉ 이메일 초안도 AI에게 요청할 수 있어요. 초안을 확인한 후 발송을 요청하세요.</div>',unsafe_allow_html=True)
     with st.container(key='aivle_quickbar'):
-        with st.form('home_quick_request',clear_on_submit=True):
+        with st.form('home_quick_request', clear_on_submit=True):
             a,b=st.columns([12,1],vertical_alignment='center')
-            with a:query=st.text_input('AI에게 업무 요청',placeholder='✦  AI에게 업무를 요청해보세요.',label_visibility='collapsed')
-            with b:sent=st.form_submit_button('➤',type='primary',use_container_width=True)
+            with a:
+                query=st.text_input('AI에게 업무 요청', placeholder='✦  AI에게 업무를 요청해보세요.',label_visibility='collapsed')
+            with b:
+                sent=st.form_submit_button('➤',type='primary',use_container_width=True)
         if sent and query.strip():
             run_request(query,None)
             st.rerun()
+        with st.expander('🎙️ 음성으로 업무 요청하기', expanded=False):
+            st.caption('마이크로 요청을 녹음한 뒤 음성 요청 보내기를 눌러주세요.')
+            home_audio=st.audio_input('음성 녹음',key='home_voice_input')
+            if st.button('🎙️ 음성 요청 보내기',key='home_voice_send',
+                         disabled=home_audio is None,use_container_width=True):
+                if home_audio is not None:
+                    run_request('',home_audio)
+                    st.rerun()
 
 
 def _email_file_text(uploaded):
