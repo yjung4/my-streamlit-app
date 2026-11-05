@@ -2241,9 +2241,9 @@ def render_home():
                 if st.button('일정 확인 및 등록\n캘린더에서 일정 확인과 추가',key='feature_calendar',use_container_width=True):
                     _go('캘린더')
             with row2[1]:
-                if st.button('이메일 작성\nAI를 활용한 이메일 초안 작성',key='feature_mail',use_container_width=True):
+                if st.button('이메일 작성\nAI 채팅에서 이메일 초안 작성 및 발송',key='feature_mail',use_container_width=True):
                     st.session_state.chat_open=True
-                    st.session_state.chat_prefill='이메일 초안을 작성해줘.'
+                    st.session_state.chat_prefill='이메일 초안을 작성해줘. 실제 발송은 하지 말고 제목과 본문을 먼저 보여줘.'
                     st.rerun()
     tasks=[t for t in st.session_state.tasks if not t.get('trashed')]
     completed=sum(bool(t.get('done')) for t in tasks)
@@ -2266,6 +2266,7 @@ def render_home():
             with column:
                 st.markdown(f'<div class="metric-tile {kind}"><div class="metric-icon">{icon}</div>'
                             f'<div><div class="metric-number">{num}건</div><div class="metric-label">{label}</div></div></div>',unsafe_allow_html=True)
+    st.markdown('<div style="color:#8199a7;font-size:13px;margin:-9px 0 16px 10px">✉ 이메일 초안도 AI에게 요청할 수 있어요. 초안을 확인한 후 발송을 요청하세요.</div>',unsafe_allow_html=True)
     with st.container(key='aivle_quickbar'):
         with st.form('home_quick_request',clear_on_submit=True):
             a,b=st.columns([12,1],vertical_alignment='center')
@@ -2280,7 +2281,7 @@ def render_chat_content():
     if st.session_state.get('voice_error'):
         st.warning(st.session_state.pop('voice_error'))
     if not st.session_state.messages:
-        st.markdown('안녕하세요! **AIVLE입니다. 👋**  \n업무, 회의, 일정 등 궁금한 내용을 자유롭게 물어보세요.')
+        st.markdown('안녕하세요! **AIVLE입니다. 👋**  \n회의 요약, 업무, 일정, 이메일 초안 작성을 도와드릴게요.')
     with st.container(height=290,border=False):
         for i,message in enumerate(st.session_state.messages):
             with st.chat_message(message['role']):
@@ -2291,8 +2292,9 @@ def render_chat_content():
                         st.session_state.active_audio_id=audio_id
                         st.session_state.autoplay_audio_id=audio_id
                         st.rerun()
+    st.caption('✉ 이메일은 채팅에서 초안을 먼저 확인하세요. 실제 발송은 별도로 요청할 수 있습니다.')
     st.markdown('**✦ 추천 질문**')
-    for i,q in enumerate(['이번 주 마감 업무 보여줘','회의록에서 할 일 찾아줘','오늘 일정 정리해줘']):
+    for i,q in enumerate(['이메일 초안 작성해줘. 발송하지 말고 보여줘','회의록에서 할 일 찾아줘','오늘 일정 정리해줘']):
         if st.button(q,key='popup_suggestion_'+str(i),use_container_width=True):
             run_request(q,None)
             st.rerun()
@@ -2344,10 +2346,13 @@ def main():
     elif page=='회의 요약':
         page_heading('▤','회의 요약','핵심 내용과 배정 업무를 확인하세요.')
         render_meetings()
-    with st.container(key='floating_chat_button'):
-        if st.button('🤖',key='open_chat_floating',help='AIVLE 채팅 열기'):
-            st.session_state.chat_open=True
-            st.rerun()
+    # 홈에는 원형 채팅 버튼을 표시하지 않습니다.
+    # 단, 홈의 '이메일 작성' 카드를 누르면 채팅 팝업은 열 수 있습니다.
+    if page != '홈':
+        with st.container(key='floating_chat_button'):
+            if st.button('🤖',key='open_chat_floating',help='AIVLE 채팅 열기'):
+                st.session_state.chat_open=True
+                st.rerun()
     if st.session_state.get('chat_open'):
         open_floating_chat()
     failures=[t for t in st.session_state.tasks if t.get('sync_status')=='failed' and not t.get('trashed') and not t.get('done')]
