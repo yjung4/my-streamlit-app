@@ -1564,37 +1564,45 @@ def run_briefing():
 APP_STYLE = """
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
-:root {--jade:#55a99f;--ink:#183447;--sub:#7993a4;--line:#dce9ea;}
+:root {--jade:#58a9a0;--ink:#173447;--sub:#7894a5;--line:#dce9e9;}
 html,body,.stApp,button,input,textarea {font-family:'Pretendard','Malgun Gothic',sans-serif!important}
-.stApp {background:linear-gradient(110deg,#f0faf8 0%,#f9fcfd 42%,#f3f8fa 100%);color:var(--ink)}
-.block-container {max-width:1750px;padding:2.2rem 2rem 3rem}
+.stApp {background:linear-gradient(110deg,#f1faf8 0%,#f9fcfd 46%,#f3f8fa 100%);color:var(--ink)}
+.block-container {max-width:1510px;padding:3.8rem 2.2rem 6rem}
 [data-testid="stHeader"] {background:transparent}
 #MainMenu,footer {visibility:hidden}
-[data-testid="stSidebar"] {background:linear-gradient(160deg,#eaf7f5,#f2faf9);border-right:1px solid #e1eeed}
-[data-testid="stSidebar"] .stButton button {width:100%;justify-content:flex-start;text-align:left;border:0;background:transparent;color:#26465a;min-height:45px;font-size:15px;border-radius:13px}
-[data-testid="stSidebar"] .stButton button[kind="primary"] {background:#d6efeb;color:#277f79}
+[data-testid="stSidebar"] {background:linear-gradient(165deg,#e9f6f4,#f1f9f8);border-right:1px solid #e0eeec}
+[data-testid="stSidebar"] .stButton button {width:100%;justify-content:flex-start;text-align:left;border:0;background:transparent;color:#26465a;min-height:47px;font-size:15px;border-radius:15px}
+[data-testid="stSidebar"] .stButton button[kind="primary"] {background:#d7efeb;color:#287e78}
 [data-testid="stSidebar"] .stButton button:hover {background:#e0f1ee}
-[data-testid="stVerticalBlockBorderWrapper"] {border-color:#e0ecee!important;border-radius:22px!important;background:rgba(255,255,255,.75);box-shadow:0 5px 22px rgba(34,88,93,.035)}
-.stButton button,.stDownloadButton button,.stLinkButton a {border-radius:13px!important;min-height:42px}
-.stButton button[kind="primary"],[data-testid="stFormSubmitButton"] button[kind="primary"] {background:#67b3a9;border-color:#67b3a9;color:white}
-.stButton button:hover {border-color:#80c2ba;color:#318f86}
+[data-testid="stVerticalBlockBorderWrapper"] {border-color:#e1eded!important;border-radius:23px!important;background:rgba(255,255,255,.77);box-shadow:0 7px 26px rgba(44,92,99,.035)}
+.stButton button,.stDownloadButton button,.stLinkButton a {border-radius:15px!important;min-height:43px}
+.stButton button[kind="primary"],[data-testid="stFormSubmitButton"] button[kind="primary"] {background:#65b3a9;border-color:#65b3a9;color:white}
+.stButton button:hover {border-color:#86c5bc;color:#318f86}
 [data-testid="stChatMessage"] {background:#f1f7f8;border-radius:18px;padding:12px}
 [data-testid="stMetricValue"] {font-size:25px}
-.brand {display:flex;gap:13px;align-items:center;margin:9px 0 30px}
-.brand-bot {width:56px;height:56px;border-radius:50%;background:linear-gradient(140deg,#a6e4db,#4caaa0);display:grid;place-items:center;font-size:31px}
+.brand {display:flex;gap:13px;align-items:center;margin:10px 0 30px}
+.brand-bot {width:56px;height:56px;border-radius:50%;background:linear-gradient(140deg,#d9f3ef,#77c6ba);display:grid;place-items:center;font-size:30px}
 .brand strong {display:block;font-size:27px;font-weight:600;letter-spacing:-1px}
 .brand span {color:#6a8493;font-size:13px}
-.hero-title {font-size:clamp(27px,2.6vw,42px);font-weight:550;letter-spacing:-1.7px;margin:22px 0 7px}
-.hero-sub {font-size:19px;color:#8099aa;margin-bottom:25px}
+.hero-title {font-size:clamp(29px,2.7vw,43px);font-weight:550;letter-spacing:-1.7px;margin:24px 0 7px}
+.hero-sub {font-size:19px;color:#8099aa;margin-bottom:26px}
 .section-title {font-size:21px;font-weight:550;color:#19384a;margin:6px 0 12px}
-.feature-intro {padding:16px 8px;color:#3c948b;font-size:14px}
 .side-caption {color:#819aaa;font-size:12px;letter-spacing:.2px}
-.chat-title {font-size:21px;font-weight:550;padding:4px 0 12px;border-bottom:1px solid #e5eeee}
 .page-heading h1 {font-size:29px;font-weight:600;margin:0}
 .page-heading p {color:#8398a5;margin-top:4px}
+.hero-illustration {height:230px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#d7f2ed 0%,#edf9f7 48%,transparent 76%);border-radius:24px}
+.hero-illustration img {max-height:215px;max-width:95%;object-fit:contain}
+.hero-illustration .fallback {font-size:95px}
+.st-key-feature_meeting button,.st-key-feature_tasks button,.st-key-feature_calendar button,.st-key-feature_mail button {height:100px;white-space:pre-line;text-align:left;justify-content:flex-start;padding:17px!important;background:#fff;border:1px solid #e6eff0!important;box-shadow:0 5px 15px #537d7d0a;font-size:16px;color:#203d4d}
+.st-key-feature_meeting button:hover,.st-key-feature_tasks button:hover,.st-key-feature_calendar button:hover,.st-key-feature_mail button:hover {background:#f0faf8}
+/* 오른쪽 아래 동그란 채팅 실행 버튼 */
+.st-key-floating_chat_button {position:fixed!important;right:27px;bottom:25px;z-index:99999!important;width:72px!important;filter:drop-shadow(0 8px 14px #428d8560)}
+.st-key-floating_chat_button button {height:68px!important;width:68px!important;min-height:68px!important;border-radius:50%!important;background:linear-gradient(135deg,#7fcfc2,#439e96)!important;color:white!important;border:3px solid white!important;font-size:27px!important;padding:0!important}
+.st-key-floating_chat_button button:hover {transform:translateY(-2px)}
+[data-testid="stDialog"] [role="dialog"] {border-radius:24px!important;background:#f9fcfc!important}
 .fc .fc-button-primary {background:#62aea4!important;border-color:#62aea4!important}
 .fc .fc-day-today {background:#ecf9f6!important}
-@media(max-width:1000px){.block-container{padding:1rem}.hero-title{font-size:28px}}
+@media(max-width:900px){.block-container{padding:1rem 1rem 6rem}.hero-title{font-size:28px}.st-key-floating_chat_button{right:16px;bottom:16px}}
 </style>
 """
 
@@ -2121,10 +2129,23 @@ CALENDAR_STYLE = """
 
 
 # ========================================================================
-# 새 민트 대시보드 UI: 기존 업무·회의·캘린더·메일 로직은 그대로 호출합니다.
+# 이미지 기준 민트 대시보드 UI (기존 비즈니스 로직 유지)
 # ========================================================================
+def _logo_path():
+    # 프로젝트 최상위 폴더에 원하는 이미지를 Aivle_banner.png로 넣으세요.
+    import os
+    for candidate in ('Aivle_banner.png', 'Aivle_banner(3).png'):
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
 def render_sidebar():
-    st.markdown('<div class="brand"><div class="brand-bot">🤖</div><div><strong>AIVLE</strong><span>AIVLE | AI 개인비서</span></div></div>', unsafe_allow_html=True)
+    logo = _logo_path()
+    if logo:
+        st.image(logo, use_container_width=True)
+    else:
+        st.markdown('<div class="brand"><div class="brand-bot">🤖</div><div><strong>AIVLE</strong><span>AIVLE | AI 개인비서</span></div></div>', unsafe_allow_html=True)
     for label, page in [('⌂   홈','홈'),('☑   내 업무','내 업무'),('▤   회의 요약','회의 요약'),('▦   캘린더','캘린더')]:
         if st.button(label,key='new_nav_'+page,use_container_width=True,type='primary' if st.session_state.page==page else 'secondary'):
             st.session_state.page=page
@@ -2156,9 +2177,13 @@ def _go(page):
 def render_home():
     st.markdown('<div class="hero-title">오늘 무엇을 도와드릴까요?</div><div class="hero-sub">필요한 업무를 선택하면 AIVLE이 도와드릴게요.</div>',unsafe_allow_html=True)
     with st.container(border=True):
-        art,features=st.columns([1,3.3],gap='medium')
+        art,features=st.columns([1,2.6],gap='medium',vertical_alignment='center')
         with art:
-            st.markdown('<div style="text-align:center;font-size:100px;padding:30px 0 0">🤖</div><div style="text-align:center;color:#5caaa1;font-size:16px">AIVLE ✦</div>',unsafe_allow_html=True)
+            logo=_logo_path()
+            if logo:
+                st.image(logo,use_container_width=True)
+            else:
+                st.markdown('<div class="hero-illustration"><span class="fallback">🤖</span></div>',unsafe_allow_html=True)
         with features:
             r1=st.columns(2,gap='medium')
             with r1[0]:
@@ -2170,7 +2195,8 @@ def render_home():
                 if st.button('▦  일정 확인 및 등록\n\n캘린더에서 일정 확인과 추가',key='feature_calendar',use_container_width=True):_go('캘린더')
             with r2[1]:
                 if st.button('✉  이메일 작성\n\nAI에게 메일 작성 요청하기',key='feature_mail',use_container_width=True):
-                    st.session_state['home_prompt']='이메일 초안을 작성해줘.'
+                    st.session_state.chat_open=True
+                    st.session_state.chat_prefill='이메일 초안을 작성해줘.'
                     st.rerun()
     st.write('')
     tasks=[t for t in st.session_state.tasks if not t.get('trashed')]
@@ -2189,46 +2215,48 @@ def render_home():
     st.write('')
     with st.form('home_quick_request',clear_on_submit=True):
         a,b=st.columns([7,1],vertical_alignment='bottom')
-        with a:query=st.text_input('AI에게 업무 요청',placeholder='✦  AI에게 업무를 요청해보세요.',label_visibility='collapsed',value=st.session_state.pop('home_prompt',''))
+        with a:query=st.text_input('AI에게 업무 요청',placeholder='✦  AI에게 업무를 요청해보세요.',label_visibility='collapsed')
         with b:sent=st.form_submit_button('➤',type='primary',use_container_width=True)
     if sent and query.strip():
         run_request(query,None)
         st.rerun()
 
 
-def render_right_chat():
-    with st.container(border=True):
-        top,expand=st.columns([5,1],vertical_alignment='center')
-        with top:st.markdown('<div class="chat-title">☏  AIVLE AI 채팅</div>',unsafe_allow_html=True)
-        with expand:
-            if st.button('⤢',key='chat_expand',help='채팅만 크게 보기'):
-                st.session_state.chat_expanded=not st.session_state.get('chat_expanded',False)
-                st.rerun()
-        if st.session_state.get('voice_error'):st.warning(st.session_state.pop('voice_error'))
-        if not st.session_state.messages:
-            st.info('안녕하세요! AIVLE입니다. 👋\n\n업무, 회의, 일정 등 궁금한 내용을 자유롭게 물어보세요.')
-        with st.container(height=380,border=False):
-            for i,message in enumerate(st.session_state.messages):
-                with st.chat_message(message['role']):
-                    st.markdown(readable_markdown(message['content']))
-                    audio_id=message.get('audio_id')
-                    if audio_id and audio_id in st.session_state.audio_vault:
-                        if st.button('다시 듣기',key='right_relisten_'+str(i)):
-                            st.session_state.active_audio_id=audio_id
-                            st.session_state.autoplay_audio_id=audio_id
-                            st.rerun()
-        st.markdown('**✦ 추천 질문**')
-        for i,q in enumerate(['이번 주 마감 업무 보여줘','회의록에서 할 일 찾아줘','오늘 일정 정리해줘']):
-            if st.button(q,key='suggestion_'+str(i),use_container_width=True):
-                run_request(q,None)
-                st.rerun()
-        with st.form('right_chat_form',clear_on_submit=True):
-            prompt=st.text_input('채팅 메시지',placeholder='궁금한 내용을 입력하세요...',label_visibility='collapsed')
-            audio=st.audio_input('음성으로 요청')
-            sent=st.form_submit_button('➤ 전송',type='primary',use_container_width=True)
-        if sent and (prompt.strip() or audio is not None):
-            run_request(prompt,audio)
+def render_chat_content():
+    if st.session_state.get('voice_error'):
+        st.warning(st.session_state.pop('voice_error'))
+    if not st.session_state.messages:
+        st.info('안녕하세요! AIVLE입니다. 👋\n\n업무, 회의, 일정 등 궁금한 내용을 자유롭게 물어보세요.')
+    with st.container(height=350,border=False):
+        for i,message in enumerate(st.session_state.messages):
+            with st.chat_message(message['role']):
+                st.markdown(readable_markdown(message['content']))
+                audio_id=message.get('audio_id')
+                if audio_id and audio_id in st.session_state.audio_vault:
+                    if st.button('다시 듣기',key='popup_relisten_'+str(i)):
+                        st.session_state.active_audio_id=audio_id
+                        st.session_state.autoplay_audio_id=audio_id
+                        st.rerun()
+    st.markdown('**✦ 추천 질문**')
+    for i,q in enumerate(['이번 주 마감 업무 보여줘','회의록에서 할 일 찾아줘','오늘 일정 정리해줘']):
+        if st.button(q,key='popup_suggestion_'+str(i),use_container_width=True):
+            run_request(q,None)
             st.rerun()
+    with st.form('popup_chat_form',clear_on_submit=True):
+        prompt=st.text_input('채팅 메시지',placeholder='궁금한 내용을 입력하세요...',value=st.session_state.pop('chat_prefill',''))
+        audio=st.audio_input('음성으로 요청')
+        sent=st.form_submit_button('➤ 전송',type='primary',use_container_width=True)
+    if sent and (prompt.strip() or audio is not None):
+        run_request(prompt,audio)
+        st.rerun()
+
+
+@st.dialog('🤖  AIVLE AI 채팅',width='large',on_dismiss='rerun')
+def open_floating_chat():
+    render_chat_content()
+    if st.button('채팅 닫기',key='close_floating_chat'):
+        st.session_state.chat_open=False
+        st.rerun()
 
 
 def main():
@@ -2246,24 +2274,21 @@ def main():
     load_saved_uploads()
     with st.sidebar:render_sidebar()
     page=st.session_state.page
-    if page=='홈':
-        if st.session_state.get('chat_expanded'):
-            if st.button('← 대시보드로',key='chat_back'):
-                st.session_state.chat_expanded=False
-                st.rerun()
-            render_right_chat()
-        else:
-            main_col,chat_col=st.columns([2.45,1],gap='large')
-            with main_col:render_home()
-            with chat_col:render_right_chat()
-    elif page=='캘린더':
-        render_calendar_dashboard()
+    if page=='홈':render_home()
+    elif page=='캘린더':render_calendar_dashboard()
     elif page=='내 업무':
         page_heading('✓','내 업무','마감과 진행 상태를 한눈에 확인하세요.')
         render_tasks()
     elif page=='회의 요약':
         page_heading('▤','회의 요약','핵심 내용과 배정 업무를 확인하세요.')
         render_meetings()
+    # 모든 페이지에서 우측 하단 원형 버튼으로 채팅을 엽니다.
+    with st.container(key='floating_chat_button'):
+        if st.button('🤖',key='open_chat_floating',help='AIVLE 채팅 열기'):
+            st.session_state.chat_open=True
+            st.rerun()
+    if st.session_state.get('chat_open'):
+        open_floating_chat()
     failures=[t for t in st.session_state.tasks if t.get('sync_status')=='failed' and not t.get('trashed') and not t.get('done')]
     if failures:st.warning(f'Google 일정 연동 실패 {len(failures)}건 · 사이드바 연결 진단에서 확인하세요.')
     panel=st.session_state.get('active_dialog')
