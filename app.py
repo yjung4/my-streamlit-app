@@ -2479,7 +2479,6 @@ def main():
     if _logo_path():
         icon_uri = _logo_icon_uri()
         st.markdown('<style>.st-key-floating_chat_button button{background-image:url("'+icon_uri+'")!important;background-size:cover!important;background-position:center!important;font-size:0!important}</style>',unsafe_allow_html=True)
-    render_voice()
     checkpoint_current_meeting()
     sync_calendar_tasks()
     checkpoint_current_meeting()
@@ -2493,6 +2492,7 @@ def main():
         render_tasks()
     elif page=='회의 요약':
         page_heading('▤','회의 요약','핵심 내용과 배정 업무를 확인하세요.')
+        render_voice()  # 음성 플레이어는 회의 요약 페이지에서만 표시
         render_meetings()
     # 홈에는 원형 채팅 버튼을 표시하지 않습니다.
     # 단, 홈의 '이메일 작성' 카드를 누르면 채팅 팝업은 열 수 있습니다.
