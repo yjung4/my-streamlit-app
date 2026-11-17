@@ -473,9 +473,9 @@ def rag_pipeline(upload, document_type="whitepaper"):
 
     data = upload.getvalue()
 
-    if not data.startswith(b"%PDF"):
+    if not data:
         raise ValueError(
-            "PDF 파일 형식이 아니에요."
+            "파일이 비어 있어요. PDF를 다시 선택해 주세요."
         )
 
     digest = hashlib.sha256(data).hexdigest()
