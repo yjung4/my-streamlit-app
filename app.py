@@ -216,7 +216,10 @@ if S.dark:
         "upload": "#1A3034",
         "uploadbutton": "#8AE1CE",
         "buttontext": "#102024",
-        "select": "#FFFFFF"
+        "field": "#243E42",
+        "fieldtext": "#F0F9F6",
+        "fieldline": "#4C7472",
+        "fieldmuted": "#B0CBC6"
     }
 else:
     C = {
@@ -230,12 +233,15 @@ else:
         "upload": "#F4FAF8",
         "uploadbutton": "#E0F4ED",
         "buttontext": "#24444A",
-        "select": "#FFFFFF"
+        "field": "#EDF2F4",
+        "fieldtext": "#24444A",
+        "fieldline": "#D8E4E5",
+        "fieldmuted": "#718D8C"
     }
 
 
 # ============================================================
-# 4. 기본 CSS
+# 4. 전체 UI CSS
 # ============================================================
 
 CSS = """
@@ -300,11 +306,6 @@ CSS = """
     -webkit-text-fill-color: currentColor !important;
 }
 
-.stApp [data-baseweb="textarea"] {
-    background: __PANEL__ !important;
-    color: __TEXT__ !important;
-}
-
 .stApp [data-testid="stChatMessage"] {
     background: __PANEL__ !important;
     border-radius: 14px !important;
@@ -333,7 +334,261 @@ CSS = """
     color: __BUTTONTEXT__ !important;
 }
 
-/* 로고 배경 */
+
+/* ========================================================
+   4-1. 입력 항목 제목 색상
+   ======================================================== */
+
+/* 선택창 자체가 아니라 제목만 지정 */
+
+.stApp [data-testid="stSelectbox"] > label,
+.stApp [data-testid="stNumberInput"] > label,
+.stApp [data-testid="stDateInput"] > label,
+.stApp [data-testid="stTextInput"] > label,
+.stApp [data-testid="stTextArea"] > label,
+.stApp [data-testid="stSlider"] > label,
+.stApp [data-testid="stFileUploader"] > label {
+    background: transparent !important;
+    color: __TEXT__ !important;
+    opacity: 1 !important;
+}
+
+.stApp [data-testid="stSelectbox"] > label *,
+.stApp [data-testid="stNumberInput"] > label *,
+.stApp [data-testid="stDateInput"] > label *,
+.stApp [data-testid="stTextInput"] > label *,
+.stApp [data-testid="stTextArea"] > label *,
+.stApp [data-testid="stSlider"] > label *,
+.stApp [data-testid="stFileUploader"] > label * {
+    color: __TEXT__ !important;
+    -webkit-text-fill-color: __TEXT__ !important;
+    opacity: 1 !important;
+}
+
+/* 다른 Streamlit 버전의 라벨 구조 대응 */
+
+.stApp [data-testid="stWidgetLabel"],
+.stApp [data-testid="stWidgetLabel"] p,
+.stApp [data-testid="stWidgetLabel"] span {
+    color: __TEXT__ !important;
+    -webkit-text-fill-color: __TEXT__ !important;
+    opacity: 1 !important;
+}
+
+
+/* ========================================================
+   4-2. 선택창
+   ======================================================== */
+
+/* 배경색은 선택창 내부에만 적용 */
+
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"],
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] > div,
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] [role="combobox"],
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] [aria-haspopup="listbox"] {
+    background-color: __FIELD__ !important;
+    background-image: none !important;
+    color: __FIELDTEXT__ !important;
+    -webkit-text-fill-color: __FIELDTEXT__ !important;
+}
+
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] > div {
+    border: 1px solid __FIELDLINE__ !important;
+    border-radius: 10px !important;
+}
+
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] span,
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] input,
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] [role="combobox"] span,
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] [role="combobox"] p {
+    color: __FIELDTEXT__ !important;
+    -webkit-text-fill-color: __FIELDTEXT__ !important;
+    opacity: 1 !important;
+}
+
+/* 내부 배경 */
+
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] > div > div,
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] > div > div > div {
+    background-color: transparent !important;
+}
+
+/* 기존 아이콘은 숨기고 화살표만 CSS로 표시 */
+
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] {
+    position: relative !important;
+}
+
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"] svg {
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+.stApp [data-testid="stSelectbox"]
+[data-baseweb="select"]::after {
+    content: "" !important;
+    position: absolute !important;
+    right: 17px !important;
+    top: 50% !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-right: 2px solid __ACCENT__ !important;
+    border-bottom: 2px solid __ACCENT__ !important;
+    transform: translateY(-70%) rotate(45deg) !important;
+    background: transparent !important;
+    pointer-events: none !important;
+    z-index: 30 !important;
+}
+
+/* 펼쳐지는 옵션 목록 */
+
+[data-baseweb="popover"],
+[data-baseweb="popover"] > div,
+[data-baseweb="menu"],
+[role="listbox"],
+[role="option"] {
+    background-color: __FIELD__ !important;
+    color: __FIELDTEXT__ !important;
+}
+
+[role="option"] span,
+[role="option"] div,
+[role="option"] p {
+    color: __FIELDTEXT__ !important;
+    -webkit-text-fill-color: __FIELDTEXT__ !important;
+}
+
+[role="option"]:hover,
+[role="option"][aria-selected="true"] {
+    background-color: __SOFT__ !important;
+}
+
+
+/* ========================================================
+   4-3. 숫자 입력창
+   ======================================================== */
+
+.stApp [data-testid="stNumberInput"]
+[data-baseweb="input"],
+.stApp [data-testid="stNumberInput"]
+[data-baseweb="base-input"],
+.stApp [data-testid="stNumberInput"]
+[data-baseweb="input"] > div,
+.stApp [data-testid="stNumberInput"] input {
+    background-color: __FIELD__ !important;
+    color: __FIELDTEXT__ !important;
+    -webkit-text-fill-color: __FIELDTEXT__ !important;
+    opacity: 1 !important;
+}
+
+.stApp [data-testid="stNumberInput"]
+[data-baseweb="input"] {
+    border: 1px solid __FIELDLINE__ !important;
+    border-radius: 10px !important;
+}
+
+.stApp [data-testid="stNumberInput"] button {
+    background-color: __FIELD__ !important;
+    color: __FIELDTEXT__ !important;
+    border-color: __FIELDLINE__ !important;
+}
+
+.stApp [data-testid="stNumberInput"] button svg {
+    color: __FIELDTEXT__ !important;
+    stroke: __FIELDTEXT__ !important;
+}
+
+
+/* ========================================================
+   4-4. 날짜 입력창
+   ======================================================== */
+
+.stApp [data-testid="stDateInput"]
+[data-baseweb="input"],
+.stApp [data-testid="stDateInput"]
+[data-baseweb="base-input"],
+.stApp [data-testid="stDateInput"] input {
+    background-color: __FIELD__ !important;
+    color: __FIELDTEXT__ !important;
+    -webkit-text-fill-color: __FIELDTEXT__ !important;
+}
+
+.stApp [data-testid="stDateInput"]
+[data-baseweb="input"] {
+    border: 1px solid __FIELDLINE__ !important;
+    border-radius: 10px !important;
+}
+
+
+/* ========================================================
+   4-5. 텍스트 입력창
+   ======================================================== */
+
+.stApp [data-testid="stTextInput"]
+[data-baseweb="input"],
+.stApp [data-testid="stTextInput"]
+[data-baseweb="base-input"],
+.stApp [data-testid="stTextInput"] input {
+    background-color: __FIELD__ !important;
+    color: __FIELDTEXT__ !important;
+    -webkit-text-fill-color: __FIELDTEXT__ !important;
+}
+
+.stApp [data-testid="stTextInput"]
+[data-baseweb="input"] {
+    border: 1px solid __FIELDLINE__ !important;
+    border-radius: 10px !important;
+}
+
+
+/* ========================================================
+   4-6. 메모 입력창
+   ======================================================== */
+
+.stApp [data-testid="stTextArea"]
+[data-baseweb="textarea"],
+.stApp [data-testid="stTextArea"] textarea {
+    background-color: __FIELD__ !important;
+    color: __FIELDTEXT__ !important;
+    -webkit-text-fill-color: __FIELDTEXT__ !important;
+}
+
+.stApp [data-testid="stTextArea"]
+[data-baseweb="textarea"] {
+    border: 1px solid __FIELDLINE__ !important;
+    border-radius: 10px !important;
+}
+
+
+/* ========================================================
+   4-7. 안내 문구
+   ======================================================== */
+
+.stApp [data-testid="stTextInput"] input::placeholder,
+.stApp [data-testid="stTextArea"] textarea::placeholder,
+.stApp [data-testid="stNumberInput"] input::placeholder {
+    color: __FIELDMUTED__ !important;
+    -webkit-text-fill-color: __FIELDMUTED__ !important;
+    opacity: 1 !important;
+}
+
+
+/* ========================================================
+   4-8. 로고
+   ======================================================== */
 
 .st-key-brand_logo,
 .st-key-brand_logo > div,
@@ -354,7 +609,10 @@ CSS = """
     align-self: auto !important;
 }
 
-/* 검색 근거 닫기 버튼 */
+
+/* ========================================================
+   4-9. 검색 근거 닫기 버튼
+   ======================================================== */
 
 .stApp .st-key-close_sources button {
     background: __SOFT__ !important;
@@ -374,7 +632,10 @@ CSS = """
     font-weight: 700 !important;
 }
 
-/* 카드 */
+
+/* ========================================================
+   4-10. 카드
+   ======================================================== */
 
 .a-title {
     font-size: 25px;
@@ -421,7 +682,10 @@ CSS = """
     color: __ACCENT__;
 }
 
-/* 달력 */
+
+/* ========================================================
+   4-11. 달력
+   ======================================================== */
 
 .a-calendar {
     width: 100%;
@@ -463,14 +727,15 @@ CSS = """
     text-overflow: ellipsis;
 }
 
-/* 대화창 스크롤 */
+
+/* ========================================================
+   4-12. 대화창
+   ======================================================== */
 
 .st-key-chat_history_area {
     scrollbar-width: thin;
     scrollbar-color: __LINE__ transparent;
 }
-
-/* 답변 생성 알림 */
 
 .st-key-generating_notice {
     position: fixed !important;
@@ -524,199 +789,7 @@ st.html(CSS)
 
 
 # ============================================================
-# 5. 다크모드 입력창 글자 가독성 최종 수정
-#
-# 핵심:
-# 입력칸이 실제로 흰색으로 렌더링되는 환경에서도
-# 글자가 반드시 보이도록 진한 색을 적용
-# ============================================================
-
-if S.dark:
-
-    st.html("""
-    <style>
-
-    /* ----------------------------------------------
-       선택창: 흰 배경 + 진한 글씨
-       ---------------------------------------------- */
-
-    .stApp [data-testid="stSelectbox"],
-    .stApp [data-testid="stSelectbox"]
-    [data-baseweb="select"],
-    .stApp [data-testid="stSelectbox"]
-    [data-baseweb="select"] > div,
-    .stApp [data-testid="stSelectbox"]
-    [role="combobox"] {
-        background-color: #EDF3F5 !important;
-        background: #EDF3F5 !important;
-        color: #18343B !important;
-        -webkit-text-fill-color: #18343B !important;
-        border-color: #B6C9CD !important;
-    }
-
-    .stApp [data-testid="stSelectbox"]
-    [data-baseweb="select"] span,
-    .stApp [data-testid="stSelectbox"]
-    [data-baseweb="select"] input,
-    .stApp [data-testid="stSelectbox"]
-    [data-baseweb="select"] p,
-    .stApp [data-testid="stSelectbox"]
-    [role="combobox"] span,
-    .stApp [data-testid="stSelectbox"]
-    [role="combobox"] div {
-        color: #18343B !important;
-        -webkit-text-fill-color: #18343B !important;
-        opacity: 1 !important;
-    }
-
-    .stApp [data-testid="stSelectbox"]
-    [data-baseweb="select"] > div > div {
-        background-color: transparent !important;
-    }
-
-    /* 기존 선택 화살표 유지 */
-
-    .stApp [data-testid="stSelectbox"] svg {
-        visibility: visible !important;
-        opacity: 1 !important;
-        color: #18343B !important;
-        fill: #18343B !important;
-    }
-
-    .stApp [data-testid="stSelectbox"] svg path {
-        fill: currentColor !important;
-    }
-
-    /* ----------------------------------------------
-       숫자 입력창
-       ---------------------------------------------- */
-
-    .stApp [data-testid="stNumberInput"],
-    .stApp [data-testid="stNumberInput"]
-    [data-baseweb="input"],
-    .stApp [data-testid="stNumberInput"]
-    [data-baseweb="base-input"],
-    .stApp [data-testid="stNumberInput"] input {
-        background-color: #EDF3F5 !important;
-        color: #18343B !important;
-        -webkit-text-fill-color: #18343B !important;
-        opacity: 1 !important;
-    }
-
-    .stApp [data-testid="stNumberInput"]
-    [data-baseweb="input"] > div {
-        background-color: #EDF3F5 !important;
-    }
-
-    .stApp [data-testid="stNumberInput"] button {
-        background-color: #EDF3F5 !important;
-        color: #18343B !important;
-    }
-
-    .stApp [data-testid="stNumberInput"] button svg {
-        color: #18343B !important;
-        stroke: #18343B !important;
-    }
-
-    /* ----------------------------------------------
-       날짜 입력창
-       ---------------------------------------------- */
-
-    .stApp [data-testid="stDateInput"]
-    [data-baseweb="input"],
-    .stApp [data-testid="stDateInput"]
-    [data-baseweb="base-input"],
-    .stApp [data-testid="stDateInput"] input {
-        background-color: #EDF3F5 !important;
-        color: #18343B !important;
-        -webkit-text-fill-color: #18343B !important;
-    }
-
-    /* ----------------------------------------------
-       텍스트 입력창
-       ---------------------------------------------- */
-
-    .stApp [data-testid="stTextInput"]
-    [data-baseweb="input"],
-    .stApp [data-testid="stTextInput"]
-    [data-baseweb="base-input"],
-    .stApp [data-testid="stTextInput"] input {
-        background-color: #EDF3F5 !important;
-        color: #18343B !important;
-        -webkit-text-fill-color: #18343B !important;
-    }
-
-    /* ----------------------------------------------
-       메모 입력창
-       ---------------------------------------------- */
-
-    .stApp [data-testid="stTextArea"]
-    [data-baseweb="textarea"],
-    .stApp [data-testid="stTextArea"] textarea {
-        background-color: #EDF3F5 !important;
-        color: #18343B !important;
-        -webkit-text-fill-color: #18343B !important;
-    }
-
-    /* ----------------------------------------------
-       안내 문구
-       ---------------------------------------------- */
-
-    .stApp [data-testid="stTextInput"]
-    input::placeholder,
-    .stApp [data-testid="stTextArea"]
-    textarea::placeholder,
-    .stApp [data-testid="stNumberInput"]
-    input::placeholder {
-        color: #72868C !important;
-        -webkit-text-fill-color: #72868C !important;
-        opacity: 1 !important;
-    }
-
-    /* ----------------------------------------------
-       드롭다운 옵션
-       ---------------------------------------------- */
-
-    [data-baseweb="popover"],
-    [data-baseweb="menu"],
-    [role="listbox"] {
-        background-color: #EDF3F5 !important;
-        color: #18343B !important;
-    }
-
-    [role="option"],
-    [role="option"] div,
-    [role="option"] span,
-    [role="option"] p {
-        color: #18343B !important;
-        -webkit-text-fill-color: #18343B !important;
-    }
-
-    [role="option"]:hover,
-    [role="option"][aria-selected="true"] {
-        background-color: #D6E9E5 !important;
-    }
-
-    /* ----------------------------------------------
-       입력칸 공통
-       ---------------------------------------------- */
-
-    .stApp [data-testid="stNumberInput"] input:focus,
-    .stApp [data-testid="stTextInput"] input:focus,
-    .stApp [data-testid="stDateInput"] input:focus,
-    .stApp [data-testid="stTextArea"] textarea:focus {
-        background-color: #EDF3F5 !important;
-        color: #18343B !important;
-        -webkit-text-fill-color: #18343B !important;
-        caret-color: #168D7D !important;
-    }
-
-    </style>
-    """)
-
-
-# ============================================================
-# 6. AI 채팅 입력창 고정
+# 5. 채팅 입력창 고정
 # ============================================================
 
 if S.page == "AI 대화":
@@ -794,7 +867,7 @@ if S.page == "AI 대화":
 
 
 # ============================================================
-# 7. 추천 질문
+# 6. 추천 질문
 # ============================================================
 
 GUIDES = {
@@ -848,7 +921,7 @@ def recommended_questions(prefix):
 
 
 # ============================================================
-# 8. 호칭 및 용어 규칙
+# 7. 호칭 및 용어 규칙
 # ============================================================
 
 TERMS = """
@@ -872,7 +945,7 @@ TERMS = """
 
 
 # ============================================================
-# 9. 백서 프롬프트
+# 8. 백서 프롬프트
 # ============================================================
 
 WHITEPAPER_RULES = """
@@ -994,12 +1067,17 @@ GENERAL_CHAT_RULES = """
 
 
 # ============================================================
-# 10. 문서 처리
+# 9. 문서 처리
 # ============================================================
 
 def page_no(doc):
     page = doc.metadata.get("page")
-    return page + 1 if isinstance(page, int) else None
+
+    return (
+        page + 1
+        if isinstance(page, int)
+        else None
+    )
 
 
 def format_docs(docs):
@@ -1015,7 +1093,8 @@ def format_docs(docs):
         )
 
         result.append(
-            f"[근거 {i} / {location}]\n{doc.page_content}"
+            f"[근거 {i} / {location}]\n"
+            f"{doc.page_content}"
         )
 
     return "\n\n".join(result)
@@ -1151,7 +1230,10 @@ def read_document(upload):
         docs = [
             Document(
                 page_content=content,
-                metadata={"page": None, "source": name}
+                metadata={
+                    "page": None,
+                    "source": name
+                }
             )
         ]
 
@@ -1182,7 +1264,10 @@ def read_document(upload):
         docs = [
             Document(
                 page_content=content,
-                metadata={"page": None, "source": name}
+                metadata={
+                    "page": None,
+                    "source": name
+                }
             )
         ]
 
@@ -1247,7 +1332,10 @@ def read_document(upload):
         docs = [
             Document(
                 page_content=content,
-                metadata={"page": None, "source": name}
+                metadata={
+                    "page": None,
+                    "source": name
+                }
             )
         ]
 
@@ -1268,7 +1356,7 @@ def read_document(upload):
 
 
 # ============================================================
-# 11. RAG 파이프라인
+# 10. RAG 파이프라인
 # ============================================================
 
 def rag_pipeline(upload, document_type="whitepaper"):
@@ -1363,7 +1451,7 @@ def rag_pipeline(upload, document_type="whitepaper"):
 
 
 # ============================================================
-# 12. 문서 등록
+# 11. 문서 등록
 # ============================================================
 
 def add_whitepaper(upload):
@@ -1436,7 +1524,7 @@ def add_chat_doc(upload):
 
 
 # ============================================================
-# 13. AI 답변
+# 12. AI 답변
 # ============================================================
 
 def answer_question(question, source):
@@ -1617,7 +1705,7 @@ def send_chat(question, mode):
 
 
 # ============================================================
-# 14. 퀴즈
+# 13. 퀴즈
 # ============================================================
 
 def create_quiz(lesson, count, difficulty, topic):
@@ -1711,7 +1799,7 @@ def create_quiz(lesson, count, difficulty, topic):
 
 
 # ============================================================
-# 15. 명언
+# 14. 명언
 # ============================================================
 
 FALLBACK_QUOTES = [
@@ -1896,7 +1984,7 @@ def quote_card():
 
 
 # ============================================================
-# 16. 날씨
+# 15. 날씨
 # ============================================================
 
 CITIES = {
@@ -1930,7 +2018,7 @@ def weather(city):
 
 
 # ============================================================
-# 17. 달력
+# 16. 달력
 # ============================================================
 
 def calendar_html(year, month):
@@ -1988,7 +2076,7 @@ def calendar_html(year, month):
 
 
 # ============================================================
-# 18. 화면 구성
+# 17. 화면 구성
 # ============================================================
 
 if S.show_sources:
@@ -2005,7 +2093,7 @@ else:
 
 
 # ============================================================
-# 19. 왼쪽 배너
+# 18. 왼쪽 배너
 # ============================================================
 
 with left:
@@ -2056,7 +2144,6 @@ with left:
         key="dark"
     )
 
-    # 현재 세션에 등록된 백서가 즉시 표시되도록 구성
     current_whitepaper_name = (
         S.whitepaper["name"]
         if S.whitepaper is not None
@@ -2093,7 +2180,7 @@ with left:
 
 
 # ============================================================
-# 20. 메인 화면
+# 19. 메인 화면
 # ============================================================
 
 with middle:
@@ -2238,7 +2325,7 @@ with middle:
 
                 if added:
                     st.toast(
-                        "백서 등록 완료! 왼쪽 배너에 반영했어요.",
+                        "백서 등록 완료!",
                         icon="✅"
                     )
                 else:
@@ -2247,9 +2334,6 @@ with middle:
                         icon="📘"
                     )
 
-                # 중요:
-                # 왼쪽 배너는 이미 그려진 상태이므로
-                # 등록 후 전체 화면을 다시 그려야 합니다.
                 st.rerun()
 
             except Exception as e:
@@ -3135,7 +3219,7 @@ with middle:
 
 
 # ============================================================
-# 21. 오른쪽 검색 근거
+# 20. 오른쪽 검색 근거
 # ============================================================
 
 if right is not None:
@@ -3237,6 +3321,7 @@ if right is not None:
                         <b class="a-accent">
                             [근거 {i}] · {esc(loc)}
                         </b>
+
                         <p class="a-muted">
                             {esc(snippet)}...
                         </p>
@@ -3257,172 +3342,3 @@ if right is not None:
                             ),
                             label_visibility="collapsed"
                         )
-
-# ============================================================
-# 다크모드 입력칸 디자인 수정
-# 기존 기능 및 나머지 UI 변경 없음
-# ============================================================
-
-if st.session_state.get("dark", False):
-
-    st.html("""
-    <style>
-
-    /* 입력칸 색상 */
-    :root {
-        --field-bg: #243E42;
-        --field-text: #F0F9F6;
-        --field-border: #4C7472;
-        --field-muted: #B0CBC6;
-    }
-
-    /* 1. 선택창 전체의 불필요한 흰 배경 제거 */
-    .stApp [data-testid="stSelectbox"],
-    .stApp [data-testid="stNumberInput"],
-    .stApp [data-testid="stDateInput"],
-    .stApp [data-testid="stTextInput"],
-    .stApp [data-testid="stTextArea"] {
-        background: transparent !important;
-    }
-
-    /* 2. 선택창 배경 */
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"],
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div,
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
-    .stApp [data-testid="stSelectbox"] [role="combobox"],
-    .stApp [data-testid="stSelectbox"] [aria-haspopup="listbox"] {
-        background: var(--field-bg) !important;
-        background-color: var(--field-bg) !important;
-        color: var(--field-text) !important;
-        -webkit-text-fill-color: var(--field-text) !important;
-    }
-
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div:first-child {
-        border: 1px solid var(--field-border) !important;
-        border-radius: 10px !important;
-    }
-
-    /* 선택값 글씨 */
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] span,
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] input,
-    .stApp [data-testid="stSelectbox"] [role="combobox"] span,
-    .stApp [data-testid="stSelectbox"] [role="combobox"] p {
-        color: var(--field-text) !important;
-        -webkit-text-fill-color: var(--field-text) !important;
-        opacity: 1 !important;
-    }
-
-    /* 3. 화살표를 네모가 아닌 아래쪽 화살표로 표시 */
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] {
-        position: relative !important;
-    }
-
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] svg {
-        visibility: hidden !important;
-        opacity: 0 !important;
-    }
-
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"]::after {
-        content: "" !important;
-        position: absolute !important;
-        right: 17px !important;
-        top: 50% !important;
-        width: 8px !important;
-        height: 8px !important;
-        border-right: 2px solid #8AE1CE !important;
-        border-bottom: 2px solid #8AE1CE !important;
-        transform: translateY(-70%) rotate(45deg) !important;
-        background: transparent !important;
-        pointer-events: none !important;
-        z-index: 30 !important;
-    }
-
-    /* 4. 숫자 입력칸 */
-    .stApp [data-testid="stNumberInput"] [data-baseweb="input"],
-    .stApp [data-testid="stNumberInput"] [data-baseweb="base-input"],
-    .stApp [data-testid="stNumberInput"] [data-baseweb="input"] > div,
-    .stApp [data-testid="stNumberInput"] input {
-        background: var(--field-bg) !important;
-        background-color: var(--field-bg) !important;
-        color: var(--field-text) !important;
-        -webkit-text-fill-color: var(--field-text) !important;
-        opacity: 1 !important;
-    }
-
-    .stApp [data-testid="stNumberInput"] button {
-        background: var(--field-bg) !important;
-        color: var(--field-text) !important;
-        border-color: var(--field-border) !important;
-    }
-
-    .stApp [data-testid="stNumberInput"] button svg {
-        color: var(--field-text) !important;
-        stroke: var(--field-text) !important;
-    }
-
-    /* 5. 날짜 입력칸 */
-    .stApp [data-testid="stDateInput"] [data-baseweb="input"],
-    .stApp [data-testid="stDateInput"] [data-baseweb="base-input"],
-    .stApp [data-testid="stDateInput"] input {
-        background: var(--field-bg) !important;
-        color: var(--field-text) !important;
-        -webkit-text-fill-color: var(--field-text) !important;
-    }
-
-    /* 6. 일정 이름 및 일반 텍스트 입력칸 */
-    .stApp [data-testid="stTextInput"] [data-baseweb="input"],
-    .stApp [data-testid="stTextInput"] [data-baseweb="base-input"],
-    .stApp [data-testid="stTextInput"] input {
-        background: var(--field-bg) !important;
-        color: var(--field-text) !important;
-        -webkit-text-fill-color: var(--field-text) !important;
-    }
-
-    /* 7. 메모 입력칸 */
-    .stApp [data-testid="stTextArea"] [data-baseweb="textarea"],
-    .stApp [data-testid="stTextArea"] textarea {
-        background: var(--field-bg) !important;
-        color: var(--field-text) !important;
-        -webkit-text-fill-color: var(--field-text) !important;
-    }
-
-    /* 8. 입력칸 테두리 */
-    .stApp [data-testid="stNumberInput"] [data-baseweb="input"],
-    .stApp [data-testid="stDateInput"] [data-baseweb="input"],
-    .stApp [data-testid="stTextInput"] [data-baseweb="input"],
-    .stApp [data-testid="stTextArea"] [data-baseweb="textarea"] {
-        border: 1px solid var(--field-border) !important;
-        border-radius: 10px !important;
-    }
-
-    /* 9. 안내 텍스트 */
-    .stApp [data-testid="stTextInput"] input::placeholder,
-    .stApp [data-testid="stTextArea"] textarea::placeholder {
-        color: var(--field-muted) !important;
-        -webkit-text-fill-color: var(--field-muted) !important;
-        opacity: 1 !important;
-    }
-
-    /* 10. 펼쳐지는 선택 목록 */
-    [data-baseweb="popover"],
-    [data-baseweb="menu"],
-    [role="listbox"],
-    [role="option"] {
-        background: var(--field-bg) !important;
-        color: var(--field-text) !important;
-    }
-
-    [role="option"] span,
-    [role="option"] div,
-    [role="option"] p {
-        color: var(--field-text) !important;
-        -webkit-text-fill-color: var(--field-text) !important;
-    }
-
-    [role="option"]:hover,
-    [role="option"][aria-selected="true"] {
-        background: #315651 !important;
-    }
-
-    </style>
-    """)
