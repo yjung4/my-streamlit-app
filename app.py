@@ -3257,3 +3257,172 @@ if right is not None:
                             ),
                             label_visibility="collapsed"
                         )
+
+# ============================================================
+# 다크모드 입력칸 디자인 수정
+# 기존 기능 및 나머지 UI 변경 없음
+# ============================================================
+
+if st.session_state.get("dark", False):
+
+    st.html("""
+    <style>
+
+    /* 입력칸 색상 */
+    :root {
+        --field-bg: #243E42;
+        --field-text: #F0F9F6;
+        --field-border: #4C7472;
+        --field-muted: #B0CBC6;
+    }
+
+    /* 1. 선택창 전체의 불필요한 흰 배경 제거 */
+    .stApp [data-testid="stSelectbox"],
+    .stApp [data-testid="stNumberInput"],
+    .stApp [data-testid="stDateInput"],
+    .stApp [data-testid="stTextInput"],
+    .stApp [data-testid="stTextArea"] {
+        background: transparent !important;
+    }
+
+    /* 2. 선택창 배경 */
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"],
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
+    .stApp [data-testid="stSelectbox"] [role="combobox"],
+    .stApp [data-testid="stSelectbox"] [aria-haspopup="listbox"] {
+        background: var(--field-bg) !important;
+        background-color: var(--field-bg) !important;
+        color: var(--field-text) !important;
+        -webkit-text-fill-color: var(--field-text) !important;
+    }
+
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div:first-child {
+        border: 1px solid var(--field-border) !important;
+        border-radius: 10px !important;
+    }
+
+    /* 선택값 글씨 */
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] span,
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] input,
+    .stApp [data-testid="stSelectbox"] [role="combobox"] span,
+    .stApp [data-testid="stSelectbox"] [role="combobox"] p {
+        color: var(--field-text) !important;
+        -webkit-text-fill-color: var(--field-text) !important;
+        opacity: 1 !important;
+    }
+
+    /* 3. 화살표를 네모가 아닌 아래쪽 화살표로 표시 */
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] {
+        position: relative !important;
+    }
+
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] svg {
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"]::after {
+        content: "" !important;
+        position: absolute !important;
+        right: 17px !important;
+        top: 50% !important;
+        width: 8px !important;
+        height: 8px !important;
+        border-right: 2px solid #8AE1CE !important;
+        border-bottom: 2px solid #8AE1CE !important;
+        transform: translateY(-70%) rotate(45deg) !important;
+        background: transparent !important;
+        pointer-events: none !important;
+        z-index: 30 !important;
+    }
+
+    /* 4. 숫자 입력칸 */
+    .stApp [data-testid="stNumberInput"] [data-baseweb="input"],
+    .stApp [data-testid="stNumberInput"] [data-baseweb="base-input"],
+    .stApp [data-testid="stNumberInput"] [data-baseweb="input"] > div,
+    .stApp [data-testid="stNumberInput"] input {
+        background: var(--field-bg) !important;
+        background-color: var(--field-bg) !important;
+        color: var(--field-text) !important;
+        -webkit-text-fill-color: var(--field-text) !important;
+        opacity: 1 !important;
+    }
+
+    .stApp [data-testid="stNumberInput"] button {
+        background: var(--field-bg) !important;
+        color: var(--field-text) !important;
+        border-color: var(--field-border) !important;
+    }
+
+    .stApp [data-testid="stNumberInput"] button svg {
+        color: var(--field-text) !important;
+        stroke: var(--field-text) !important;
+    }
+
+    /* 5. 날짜 입력칸 */
+    .stApp [data-testid="stDateInput"] [data-baseweb="input"],
+    .stApp [data-testid="stDateInput"] [data-baseweb="base-input"],
+    .stApp [data-testid="stDateInput"] input {
+        background: var(--field-bg) !important;
+        color: var(--field-text) !important;
+        -webkit-text-fill-color: var(--field-text) !important;
+    }
+
+    /* 6. 일정 이름 및 일반 텍스트 입력칸 */
+    .stApp [data-testid="stTextInput"] [data-baseweb="input"],
+    .stApp [data-testid="stTextInput"] [data-baseweb="base-input"],
+    .stApp [data-testid="stTextInput"] input {
+        background: var(--field-bg) !important;
+        color: var(--field-text) !important;
+        -webkit-text-fill-color: var(--field-text) !important;
+    }
+
+    /* 7. 메모 입력칸 */
+    .stApp [data-testid="stTextArea"] [data-baseweb="textarea"],
+    .stApp [data-testid="stTextArea"] textarea {
+        background: var(--field-bg) !important;
+        color: var(--field-text) !important;
+        -webkit-text-fill-color: var(--field-text) !important;
+    }
+
+    /* 8. 입력칸 테두리 */
+    .stApp [data-testid="stNumberInput"] [data-baseweb="input"],
+    .stApp [data-testid="stDateInput"] [data-baseweb="input"],
+    .stApp [data-testid="stTextInput"] [data-baseweb="input"],
+    .stApp [data-testid="stTextArea"] [data-baseweb="textarea"] {
+        border: 1px solid var(--field-border) !important;
+        border-radius: 10px !important;
+    }
+
+    /* 9. 안내 텍스트 */
+    .stApp [data-testid="stTextInput"] input::placeholder,
+    .stApp [data-testid="stTextArea"] textarea::placeholder {
+        color: var(--field-muted) !important;
+        -webkit-text-fill-color: var(--field-muted) !important;
+        opacity: 1 !important;
+    }
+
+    /* 10. 펼쳐지는 선택 목록 */
+    [data-baseweb="popover"],
+    [data-baseweb="menu"],
+    [role="listbox"],
+    [role="option"] {
+        background: var(--field-bg) !important;
+        color: var(--field-text) !important;
+    }
+
+    [role="option"] span,
+    [role="option"] div,
+    [role="option"] p {
+        color: var(--field-text) !important;
+        -webkit-text-fill-color: var(--field-text) !important;
+    }
+
+    [role="option"]:hover,
+    [role="option"][aria-selected="true"] {
+        background: #315651 !important;
+    }
+
+    </style>
+    """)
