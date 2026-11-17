@@ -339,8 +339,6 @@ CSS = """
    4-1. 입력 항목 제목 색상
    ======================================================== */
 
-/* 선택창 자체가 아니라 제목만 지정 */
-
 .stApp [data-testid="stSelectbox"] > label,
 .stApp [data-testid="stNumberInput"] > label,
 .stApp [data-testid="stDateInput"] > label,
@@ -365,8 +363,6 @@ CSS = """
     opacity: 1 !important;
 }
 
-/* 다른 Streamlit 버전의 라벨 구조 대응 */
-
 .stApp [data-testid="stWidgetLabel"],
 .stApp [data-testid="stWidgetLabel"] p,
 .stApp [data-testid="stWidgetLabel"] span {
@@ -379,8 +375,6 @@ CSS = """
 /* ========================================================
    4-2. 선택창
    ======================================================== */
-
-/* 배경색은 선택창 내부에만 적용 */
 
 .stApp [data-testid="stSelectbox"]
 [data-baseweb="select"],
@@ -415,8 +409,6 @@ CSS = """
     opacity: 1 !important;
 }
 
-/* 내부 배경 */
-
 .stApp [data-testid="stSelectbox"]
 [data-baseweb="select"] > div > div,
 .stApp [data-testid="stSelectbox"]
@@ -424,7 +416,7 @@ CSS = """
     background-color: transparent !important;
 }
 
-/* 기존 아이콘은 숨기고 화살표만 CSS로 표시 */
+/* 선택 화살표 */
 
 .stApp [data-testid="stSelectbox"]
 [data-baseweb="select"] {
@@ -453,7 +445,7 @@ CSS = """
     z-index: 30 !important;
 }
 
-/* 펼쳐지는 옵션 목록 */
+/* 펼쳐지는 선택 목록 */
 
 [data-baseweb="popover"],
 [data-baseweb="popover"] > div,
@@ -598,8 +590,6 @@ CSS = """
     box-shadow: none !important;
 }
 
-/* 왼쪽 메뉴는 고정하지 않음 */
-
 .stApp div[data-testid="stColumn"]:has(.st-key-brand_logo) {
     position: static !important;
     top: auto !important;
@@ -683,32 +673,6 @@ CSS = """
 }
 
 
-
-/* 일정 등록 버튼 가독성 수정 시작 */
-
-.stApp [data-testid="stFormSubmitButton"] button {
-    background-color: #8AE1CE !important;
-    color: #102024 !important;
-    border: 1px solid #8AE1CE !important;
-    border-radius: 10px !important;
-    font-weight: 600 !important;
-    opacity: 1 !important;
-}
-
-.stApp [data-testid="stFormSubmitButton"] button p,
-.stApp [data-testid="stFormSubmitButton"] button span {
-    color: #102024 !important;
-    -webkit-text-fill-color: #102024 !important;
-    opacity: 1 !important;
-}
-
-.stApp [data-testid="stFormSubmitButton"] button:hover {
-    background-color: #A5EBDD !important;
-    border-color: #A5EBDD !important;
-}
-
-/* 일정 등록 버튼 가독성 수정 끝 */
-
 /* ========================================================
    4-11. 달력
    ======================================================== */
@@ -755,7 +719,33 @@ CSS = """
 
 
 /* ========================================================
-   4-12. 대화창
+   4-12. 일정 등록 버튼 가독성 수정
+   ======================================================== */
+
+.stApp [data-testid="stFormSubmitButton"] button {
+    background-color: #8AE1CE !important;
+    color: #102024 !important;
+    border: 1px solid #8AE1CE !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+.stApp [data-testid="stFormSubmitButton"] button p,
+.stApp [data-testid="stFormSubmitButton"] button span {
+    color: #102024 !important;
+    -webkit-text-fill-color: #102024 !important;
+    opacity: 1 !important;
+}
+
+.stApp [data-testid="stFormSubmitButton"] button:hover {
+    background-color: #A5EBDD !important;
+    border-color: #A5EBDD !important;
+}
+
+
+/* ========================================================
+   4-13. 대화창
    ======================================================== */
 
 .st-key-chat_history_area {
