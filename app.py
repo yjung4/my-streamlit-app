@@ -433,45 +433,198 @@ for key, value in C.items():
 st.html(STYLE)
 
 
-# 기존 다크모드 가독성 보정 유지
+# ============================================================
+# 3-1. 다크모드 가독성 수정
+# 기존 기능 변경 없이 CSS만 보정
+# ============================================================
+
 if S.dark:
     st.html("""
     <style>
-    .stApp [data-testid="stTextArea"] textarea,
-    .stApp [data-testid="stTextArea"] textarea:disabled,
-    .stApp [data-testid="stTextArea"] textarea[disabled],
-    .stApp [data-testid="stDateInput"] input,
-    .stApp [data-testid="stTextInput"] input,
-    .stApp [data-testid="stNumberInput"] input,
-    .stApp [data-testid="stChatInput"] textarea {
-        background-color: #1A3034 !important;
-        color: #EEF8F5 !important;
-        -webkit-text-fill-color: #EEF8F5 !important;
-        opacity: 1 !important;
+
+    /* 기본 다크모드 색상 */
+
+    :root {
         color-scheme: dark !important;
     }
 
+    /* 선택창: 나의 상황, 날씨 지역, 월 */
+
     .stApp [data-testid="stSelectbox"] [data-baseweb="select"],
     .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div,
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
-    .stApp [data-testid="stDateInput"] [data-baseweb="input"],
-    .stApp [data-testid="stDateInput"] [data-baseweb="input"] > div,
-    .stApp [data-testid="stDateInput"] [data-baseweb="input"] > div > div {
-        background: #1A3034 !important;
+    .stApp [data-testid="stSelectbox"] [role="combobox"],
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div > div {
+        background-color: #1A3034 !important;
         color: #EEF8F5 !important;
         border-color: #52746C !important;
         color-scheme: dark !important;
     }
 
     .stApp [data-testid="stSelectbox"] [data-baseweb="select"] *,
-    .stApp [data-testid="stDateInput"] svg {
+    .stApp [data-testid="stSelectbox"] [role="combobox"] *,
+    .stApp [data-testid="stSelectbox"] svg {
         color: #EEF8F5 !important;
         -webkit-text-fill-color: #EEF8F5 !important;
     }
 
+    .stApp [data-testid="stSelectbox"] input {
+        background-color: transparent !important;
+        color: #EEF8F5 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
+    }
+
+    /* 선택창을 눌렀을 때 열리는 목록 */
+
+    body [data-baseweb="popover"],
+    body [data-baseweb="menu"],
+    body [role="listbox"],
+    body [role="option"] {
+        background-color: #1A3034 !important;
+        color: #EEF8F5 !important;
+    }
+
+    body [data-baseweb="popover"] *,
+    body [data-baseweb="menu"] *,
+    body [role="listbox"] *,
+    body [role="option"] * {
+        color: #EEF8F5 !important;
+    }
+
+    body [role="option"]:hover {
+        background-color: #24413E !important;
+    }
+
+    /* AI 채팅 입력창: 바깥과 안쪽을 동일한 배경으로 */
+
+    .stApp [data-testid="stChatInput"],
+    .stApp [data-testid="stChatInput"] > div,
+    .stApp [data-testid="stChatInput"] [data-baseweb="textarea"],
+    .stApp [data-testid="stChatInput"] [data-baseweb="textarea"] > div,
+    .stApp [data-testid="stChatInput"] textarea {
+        background-color: #1A3034 !important;
+        color: #EEF8F5 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
+        box-shadow: none !important;
+    }
+
+    .stApp [data-testid="stChatInput"] {
+        border: 1px solid #52746C !important;
+        border-radius: 13px !important;
+    }
+
+    .stApp [data-testid="stChatInput"] textarea::placeholder {
+        color: #B7CBC8 !important;
+        -webkit-text-fill-color: #B7CBC8 !important;
+        opacity: 1 !important;
+    }
+
+    .stApp [data-testid="stChatInput"] button {
+        background-color: #1A3034 !important;
+        color: #8AE1CE !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .stApp [data-testid="stChatInput"] button svg {
+        color: #8AE1CE !important;
+        stroke: #8AE1CE !important;
+    }
+
+    /* 날짜 입력창 */
+
+    .stApp [data-testid="stDateInput"] input,
+    .stApp [data-testid="stDateInput"] [data-baseweb="input"],
+    .stApp [data-testid="stDateInput"] [data-baseweb="input"] > div,
+    .stApp [data-testid="stDateInput"] [data-baseweb="input"] > div > div {
+        background-color: #1A3034 !important;
+        color: #EEF8F5 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
+        border-color: #52746C !important;
+        color-scheme: dark !important;
+    }
+
+    .stApp [data-testid="stDateInput"] svg {
+        color: #8AE1CE !important;
+    }
+
+    /* 연도 및 숫자 입력창 */
+
+    .stApp [data-testid="stNumberInput"] input,
+    .stApp [data-testid="stNumberInput"] [data-baseweb="input"],
+    .stApp [data-testid="stNumberInput"] [data-baseweb="input"] > div,
+    .stApp [data-testid="stNumberInput"] button {
+        background-color: #1A3034 !important;
+        color: #EEF8F5 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
+        border-color: #52746C !important;
+    }
+
+    .stApp [data-testid="stNumberInput"] button svg {
+        color: #8AE1CE !important;
+    }
+
+    /* 일반 텍스트 입력 및 메모 */
+
+    .stApp [data-testid="stTextInput"] input,
+    .stApp [data-testid="stTextArea"] textarea,
+    .stApp [data-testid="stTextArea"] textarea:disabled,
+    .stApp [data-testid="stTextArea"] textarea[disabled] {
+        background-color: #1A3034 !important;
+        color: #EEF8F5 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
+        border-color: #52746C !important;
+        opacity: 1 !important;
+    }
+
+    .stApp [data-testid="stTextInput"] input::placeholder,
+    .stApp [data-testid="stTextArea"] textarea::placeholder {
+        color: #B7CBC8 !important;
+        -webkit-text-fill-color: #B7CBC8 !important;
+        opacity: 1 !important;
+    }
+
+    /* 검색 근거 원문 */
+
+    .stApp textarea:disabled,
+    .stApp input:disabled {
+        color: #EEF8F5 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
+        opacity: 1 !important;
+    }
+
+    /* PDF 및 JSON 업로드 영역 */
+
+    .stApp [data-testid="stFileUploader"] section,
+    .stApp [data-testid="stFileUploaderDropzone"] {
+        background-color: #1A3034 !important;
+        border-color: #52746C !important;
+    }
+
+    .stApp [data-testid="stFileUploaderDropzone"] p,
+    .stApp [data-testid="stFileUploaderDropzone"] span,
+    .stApp [data-testid="stFileUploaderDropzone"] small,
+    .stApp [data-testid="stFileUploaderDropzoneInstructions"] * {
+        color: #EEF8F5 !important;
+        opacity: 1 !important;
+    }
+
+    .stApp [data-testid="stFileUploaderDropzone"] button {
+        background-color: #8AE1CE !important;
+        color: #102024 !important;
+        -webkit-text-fill-color: #102024 !important;
+        border-color: #52746C !important;
+    }
+
+    .stApp [data-testid="stFileUploaderDropzone"] button * {
+        color: #102024 !important;
+        -webkit-text-fill-color: #102024 !important;
+    }
+
+    /* 다운로드 버튼 */
+
     .stApp [data-testid="stDownloadButton"] button,
     .stApp [data-testid="stFormSubmitButton"] button {
-        background: #24413E !important;
+        background-color: #24413E !important;
         color: #EEF8F5 !important;
         -webkit-text-fill-color: #EEF8F5 !important;
         border: 1px solid #52746C !important;
@@ -483,32 +636,15 @@ if S.dark:
         -webkit-text-fill-color: #EEF8F5 !important;
     }
 
-    .stApp [data-testid="stFileUploader"] section,
-    .stApp [data-testid="stFileUploaderDropzone"] {
-        background: #1A3034 !important;
-        color: #EEF8F5 !important;
-    }
-
-    .stApp [data-testid="stFileUploader"] p,
-    .stApp [data-testid="stFileUploader"] span,
-    .stApp [data-testid="stFileUploader"] small {
-        color: #EEF8F5 !important;
-        opacity: 1 !important;
-    }
-
-    .stApp [data-testid="stFileUploaderDropzone"] button,
-    .stApp [data-testid="stFileUploaderDropzone"] button * {
-        background: #8AE1CE !important;
-        color: #102024 !important;
-        -webkit-text-fill-color: #102024 !important;
-    }
+    /* 기존 로고가 어두운 배경에 묻히지 않도록 */
 
     .st-key-brand_logo {
-        background: #EAF8F4 !important;
+        background-color: #EAF8F4 !important;
         border-radius: 13px !important;
         padding: 8px 10px !important;
         margin-bottom: 10px !important;
     }
+
     </style>
     """)
 
@@ -1860,7 +1996,6 @@ with middle:
             "답변도 가능해요."
         )
 
-        # PDF 첨부 칸은 하나만 유지
         chat_file = st.file_uploader(
             "📎 대화에 참고할 PDF 첨부 (선택)",
             type=["pdf"],
@@ -1951,7 +2086,6 @@ with middle:
 
         st.divider()
 
-        # 일반 대화와 문서 대화를 하나의 채팅창에 표시
         for m in S.messages:
             with st.chat_message(
                 m["role"],
@@ -1961,7 +2095,6 @@ with middle:
                     m["content"]
                 )
 
-        # + 버튼 없는 일반 채팅 입력창
         question = st.chat_input(
             "무엇이든 편하게 물어보세요 😊"
         )
