@@ -44,9 +44,12 @@ DEFAULTS = {
     "whitepaper": None,
     "lessons": {},
     "chat_doc": None,
-    "chat_source_widget": "기본 백서",
+    "chat_mode": "자동",
     "messages": [],
     "sources_by_doc": {},
+    "last_sources": [],
+    "last_source_id": "",
+    "last_source_name": "",
     "pending_question": None,
     "quiz": [],
     "quiz_doc": None,
@@ -67,14 +70,10 @@ for key, value in DEFAULTS.items():
 
 def api_key():
     key = os.getenv("OPENAI_API_KEY", "").strip()
-
     if key:
         return key
-
     try:
-        return str(
-            st.secrets.get("OPENAI_API_KEY", "")
-        ).strip()
+        return str(st.secrets.get("OPENAI_API_KEY", "")).strip()
     except Exception:
         return ""
 
@@ -84,7 +83,6 @@ def llm(temperature=0):
         raise ValueError(
             "Streamlit Secrets에 OPENAI_API_KEY를 설정해 주세요."
         )
-
     return ChatOpenAI(
         model="gpt-4o-mini",
         temperature=temperature,
@@ -96,23 +94,56 @@ def esc(value):
     return html.escape(str(value), quote=True)
 
 
-def logo(stem, width=145):
-    for folder in (ROOT, ROOT / "images"):
-        if folder.exists():
+# ============================================================
+# 2. 기존 로고 사용
+# ============================================================
+
+def image_path(stems):
+    for stem in stems:
+        for folder in (ROOT, ROOT / "images"):
+            if not folder.exists():
+                continue
+
             for file in folder.iterdir():
                 if (
                     file.suffix.lower() in (".png", ".jpg", ".jpeg")
                     and file.stem.replace(" ", "")
                     == stem.replace(" ", "")
                 ):
-                    st.image(str(file), width=width)
-                    return
+                    return str(file)
+    return None
 
-    st.markdown("**AIVLE School ✦**")
+
+def logo(stem, width=145):
+    if stem == "캐릭터 로고":
+        path = image_path([
+            "캐릭터 로고_이전",
+            "캐릭터 로고 원본",
+            "캐릭터 로고_원본",
+            "캐릭터 로고"
+        ])
+    else:
+        path = image_path([stem])
+
+    if path:
+        st.image(path, width=width)
+    else:
+        st.markdown("**AIVLE School ✦**")
+
+
+def chat_avatar(role):
+    if role == "assistant":
+        return image_path([
+            "학습도우미 로고",
+            "캐릭터 로고_이전",
+            "캐릭터 로고 원본",
+            "캐릭터 로고"
+        ]) or "📗"
+    return None
 
 
 # ============================================================
-# 2. 라이트 / 다크 모드 색상
+# 3. 라이트 / 다크 모드
 # ============================================================
 
 C = ({
@@ -141,10 +172,8 @@ C = ({
     "select": "#FFFFFF",
 })
 
-
 STYLE = """
 <style>
-
 :root {
     color-scheme: __SCHEME__;
 }
@@ -164,8 +193,6 @@ STYLE = """
     padding-top: 1.1rem;
 }
 
-/* 전체 글씨 */
-
 .stApp [data-testid="stMarkdownContainer"],
 .stApp [data-testid="stMarkdownContainer"] p,
 .stApp [data-testid="stMarkdownContainer"] li,
@@ -182,8 +209,6 @@ STYLE = """
 .stApp [data-testid="stCaptionContainer"] p {
     color: __MUTED__ !important;
 }
-
-/* 일반 버튼 */
 
 .stApp .stButton > button,
 .stApp [data-testid="stPopover"] button {
@@ -202,8 +227,6 @@ STYLE = """
     background: __SOFT__ !important;
     color: __ACCENT__ !important;
 }
-
-/* 기본 입력창 */
 
 .stApp [data-baseweb="input"],
 .stApp [data-baseweb="textarea"],
@@ -225,8 +248,6 @@ STYLE = """
     -webkit-text-fill-color: __MUTED__ !important;
 }
 
-/* 메트릭 */
-
 .stApp [data-testid="stMetric"] {
     background: __PANEL__;
     border: 1px solid __LINE__;
@@ -238,8 +259,6 @@ STYLE = """
 .stApp [data-testid="stMetricLabel"] {
     color: __TEXT__ !important;
 }
-
-/* 채팅 */
 
 .stApp [data-testid="stChatMessage"] {
     background: __PANEL__;
@@ -254,8 +273,6 @@ STYLE = """
 .stApp [data-testid="stExpander"] * {
     color: __TEXT__ !important;
 }
-
-/* PDF 업로드 영역 */
 
 .stApp [data-testid="stFileUploader"] section,
 .stApp [data-testid="stFileUploaderDropzone"] {
@@ -290,8 +307,6 @@ STYLE = """
     color: __ACCENT__ !important;
 }
 
-/* 선택창 */
-
 .stApp [data-baseweb="select"] > div {
     background: __SELECT__ !important;
     border: 1px solid __LINE__ !important;
@@ -316,8 +331,6 @@ STYLE = """
 [role="listbox"] * {
     color: __TEXT__ !important;
 }
-
-/* 카드 디자인 */
 
 .a-title {
     font-size: 25px;
@@ -364,8 +377,6 @@ STYLE = """
     color: __ACCENT__;
 }
 
-/* 달력 */
-
 .a-calendar {
     width: 100%;
     table-layout: fixed;
@@ -405,7 +416,6 @@ STYLE = """
     white-space: nowrap;
     text-overflow: ellipsis;
 }
-
 </style>
 """
 
@@ -423,277 +433,88 @@ for key, value in C.items():
 st.html(STYLE)
 
 
-# ============================================================
-# 2-1. 다크모드 가독성 전체 보정
-# ============================================================
-
+# 기존 다크모드 가독성 보정 유지
 if S.dark:
     st.html("""
     <style>
-
-    /* 선택창, 입력창 공통 */
-
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"],
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div,
-    .stApp [data-testid="stSelectbox"] [role="combobox"],
-    .stApp [data-testid="stMultiSelect"] [data-baseweb="select"],
-    .stApp [data-testid="stMultiSelect"] [data-baseweb="select"] > div,
-    .stApp [data-testid="stMultiSelect"] [role="combobox"],
-    .stApp [data-testid="stDateInput"] [data-baseweb="input"],
-    .stApp [data-testid="stNumberInput"] [data-baseweb="input"],
-    .stApp [data-testid="stTextInput"] [data-baseweb="input"],
-    .stApp [data-testid="stTextArea"] [data-baseweb="textarea"],
-    .stApp [data-testid="stChatInput"] {
-        background: #1A3034 !important;
-        background-color: #1A3034 !important;
-        color: #EEF8F5 !important;
-        border-color: #3D5A57 !important;
-        color-scheme: dark !important;
-    }
-
-    /* 나의 상황, 지역, 교안, 난이도 선택 */
-
-    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] *,
-    .stApp [data-testid="stMultiSelect"] [data-baseweb="select"] *,
-    .stApp [data-testid="stSelectbox"] [role="combobox"] *,
-    .stApp [data-testid="stMultiSelect"] [role="combobox"] * {
-        color: #EEF8F5 !important;
-        -webkit-text-fill-color: #EEF8F5 !important;
-    }
-
-    .stApp [data-testid="stSelectbox"] svg,
-    .stApp [data-testid="stMultiSelect"] svg {
-        fill: #B7CBC8 !important;
-        color: #B7CBC8 !important;
-    }
-
-    .stApp [data-testid="stSelectbox"] input,
-    .stApp [data-testid="stMultiSelect"] input {
-        background: transparent !important;
-        color: #EEF8F5 !important;
-        -webkit-text-fill-color: #EEF8F5 !important;
-    }
-
-    /* 검색 근거 원문 보기 */
-
     .stApp [data-testid="stTextArea"] textarea,
     .stApp [data-testid="stTextArea"] textarea:disabled,
     .stApp [data-testid="stTextArea"] textarea[disabled],
-    .stApp [data-testid="stTextArea"] textarea[aria-disabled="true"] {
-        background: #1A3034 !important;
-        background-color: #1A3034 !important;
-        color: #EEF8F5 !important;
-        -webkit-text-fill-color: #EEF8F5 !important;
-        opacity: 1 !important;
-        border: 1px solid #3D5A57 !important;
-        caret-color: #8AE1CE !important;
-    }
-
-    .stApp [data-testid="stTextArea"] textarea::placeholder {
-        color: #B7CBC8 !important;
-        -webkit-text-fill-color: #B7CBC8 !important;
-    }
-
-    /* 일반 텍스트, 숫자, 날짜 입력 */
-
+    .stApp [data-testid="stDateInput"] input,
     .stApp [data-testid="stTextInput"] input,
     .stApp [data-testid="stNumberInput"] input,
-    .stApp [data-testid="stDateInput"] input,
-    .stApp [data-testid="stChatInput"] textarea,
-    .stApp [data-testid="stTextInput"] input:disabled,
-    .stApp [data-testid="stNumberInput"] input:disabled,
-    .stApp [data-testid="stDateInput"] input:disabled {
+    .stApp [data-testid="stChatInput"] textarea {
         background-color: #1A3034 !important;
         color: #EEF8F5 !important;
         -webkit-text-fill-color: #EEF8F5 !important;
         opacity: 1 !important;
+        color-scheme: dark !important;
     }
 
-    .stApp input::placeholder,
-    .stApp textarea::placeholder {
-        color: #B7CBC8 !important;
-        -webkit-text-fill-color: #B7CBC8 !important;
-        opacity: 1 !important;
-    }
-
-    .stApp [data-testid="stNumberInput"] button,
-    .stApp [data-testid="stDateInput"] button {
-        background: #24413E !important;
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"],
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
+    .stApp [data-testid="stDateInput"] [data-baseweb="input"],
+    .stApp [data-testid="stDateInput"] [data-baseweb="input"] > div,
+    .stApp [data-testid="stDateInput"] [data-baseweb="input"] > div > div {
+        background: #1A3034 !important;
         color: #EEF8F5 !important;
+        border-color: #52746C !important;
+        color-scheme: dark !important;
     }
 
-    .stApp [data-testid="stNumberInput"] svg,
+    .stApp [data-testid="stSelectbox"] [data-baseweb="select"] *,
     .stApp [data-testid="stDateInput"] svg {
         color: #EEF8F5 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
     }
 
-    /* 파일 업로드 */
-
-    .stApp [data-testid="stFileUploader"],
-    .stApp [data-testid="stFileUploader"] section,
-    .stApp [data-testid="stFileUploaderDropzone"],
-    .stApp [data-testid="stFileUploaderFile"] {
-        background-color: #1A3034 !important;
+    .stApp [data-testid="stDownloadButton"] button,
+    .stApp [data-testid="stFormSubmitButton"] button {
+        background: #24413E !important;
         color: #EEF8F5 !important;
-        border-color: #3D5A57 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
+        border: 1px solid #52746C !important;
+    }
+
+    .stApp [data-testid="stDownloadButton"] button *,
+    .stApp [data-testid="stFormSubmitButton"] button * {
+        color: #EEF8F5 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
+    }
+
+    .stApp [data-testid="stFileUploader"] section,
+    .stApp [data-testid="stFileUploaderDropzone"] {
+        background: #1A3034 !important;
+        color: #EEF8F5 !important;
     }
 
     .stApp [data-testid="stFileUploader"] p,
     .stApp [data-testid="stFileUploader"] span,
-    .stApp [data-testid="stFileUploader"] small,
-    .stApp [data-testid="stFileUploader"] strong {
+    .stApp [data-testid="stFileUploader"] small {
         color: #EEF8F5 !important;
         opacity: 1 !important;
     }
 
     .stApp [data-testid="stFileUploaderDropzone"] button,
     .stApp [data-testid="stFileUploaderDropzone"] button * {
-        background-color: #8AE1CE !important;
+        background: #8AE1CE !important;
         color: #102024 !important;
         -webkit-text-fill-color: #102024 !important;
     }
 
-    /* 라디오, 토글, 체크박스, 슬라이더 */
-
-    .stApp [data-testid="stRadio"] label,
-    .stApp [data-testid="stRadio"] p,
-    .stApp [data-testid="stCheckbox"] label,
-    .stApp [data-testid="stToggle"] label,
-    .stApp [data-testid="stSlider"] p,
-    .stApp [data-testid="stSlider"] span {
-        color: #EEF8F5 !important;
-    }
-
-    .stApp [data-testid="stPopoverBody"],
-    .stApp [data-testid="stExpander"] {
-        background-color: #1A3034 !important;
-        color: #EEF8F5 !important;
-    }
-
-    /* 드롭다운 목록 */
-
-    body [data-baseweb="popover"],
-    body [data-baseweb="menu"],
-    body [role="listbox"],
-    body [role="option"] {
-        background-color: #1A3034 !important;
-        color: #EEF8F5 !important;
-    }
-
-    body [data-baseweb="popover"] [role="option"],
-    body [data-baseweb="menu"] [role="option"],
-    body [role="listbox"] [role="option"] {
-        color: #EEF8F5 !important;
-    }
-
-    body [role="option"][aria-selected="true"],
-    body [role="option"]:hover {
-        background-color: #24413E !important;
-    }
-
-    /* 상단 로고 */
-
     .st-key-brand_logo {
         background: #EAF8F4 !important;
-        border: 1px solid #3D5A57 !important;
         border-radius: 13px !important;
         padding: 8px 10px !important;
         margin-bottom: 10px !important;
     }
-
-    .st-key-brand_logo [data-testid="stImage"] img {
-        opacity: 1 !important;
-        filter: none !important;
-    }
-
-    .st-key-brand_logo [data-testid="stMarkdownContainer"] * {
-        color: #24444A !important;
-    }
-
-    /* 다운로드 버튼과 일정 등록 버튼 */
-
-    .stApp [data-testid="stDownloadButton"] button,
-    .stApp [data-testid="stFormSubmitButton"] button,
-    .stApp div.stDownloadButton > button,
-    .stApp div.stFormSubmitButton > button {
-        background: #24413E !important;
-        background-color: #24413E !important;
-        color: #EEF8F5 !important;
-        -webkit-text-fill-color: #EEF8F5 !important;
-        border: 1px solid #52746C !important;
-        border-radius: 11px !important;
-        opacity: 1 !important;
-    }
-
-    .stApp [data-testid="stDownloadButton"] button *,
-    .stApp [data-testid="stFormSubmitButton"] button *,
-    .stApp div.stDownloadButton > button *,
-    .stApp div.stFormSubmitButton > button * {
-        color: #EEF8F5 !important;
-        -webkit-text-fill-color: #EEF8F5 !important;
-    }
-
-    .stApp [data-testid="stDownloadButton"] button:hover,
-    .stApp [data-testid="stFormSubmitButton"] button:hover {
-        background: #30564E !important;
-        border-color: #8AE1CE !important;
-    }
-
-    /* 비활성화된 다운로드 및 폼 버튼 */
-
-    .stApp [data-testid="stDownloadButton"] button:disabled,
-    .stApp [data-testid="stFormSubmitButton"] button:disabled {
-        background: #1A3034 !important;
-        color: #B7CBC8 !important;
-        -webkit-text-fill-color: #B7CBC8 !important;
-        opacity: 0.85 !important;
-    }
-
-    /* 날짜 선택창 내부 흰 배경 제거 */
-
-    .stApp [data-testid="stDateInput"] [data-baseweb="input"],
-    .stApp [data-testid="stDateInput"] [data-baseweb="input"] > div,
-    .stApp [data-testid="stDateInput"] [data-baseweb="input"] > div > div,
-    .stApp [data-testid="stDateInput"] input,
-    .stApp [data-testid="stDateInput"] [role="group"] {
-        background: #1A3034 !important;
-        background-color: #1A3034 !important;
-        color: #EEF8F5 !important;
-        -webkit-text-fill-color: #EEF8F5 !important;
-        border-color: #52746C !important;
-        color-scheme: dark !important;
-    }
-
-    .stApp [data-testid="stDateInput"] input::placeholder {
-        color: #B7CBC8 !important;
-        -webkit-text-fill-color: #B7CBC8 !important;
-    }
-
-    .stApp [data-testid="stDateInput"] svg {
-        color: #8AE1CE !important;
-        fill: none !important;
-    }
-
-    /* 선택창 오른쪽 화살표의 흰 배경 제거 */
-
-    .stApp [data-baseweb="select"] > div > div,
-    .stApp [data-baseweb="select"] [role="combobox"] > div {
-        background-color: #1A3034 !important;
-    }
-
-    /* 채팅 파일 이름 */
-
-    .stApp [data-testid="stFileUploaderFile"] *,
-    .stApp [data-testid="stChatInput"] * {
-        color: #EEF8F5 !important;
-    }
-
     </style>
     """)
 
 
 # ============================================================
-# 3. 추천 질문
+# 4. 추천 질문
 # ============================================================
 
 GUIDES = {
@@ -726,7 +547,6 @@ GUIDES = {
 
 def recommended_questions(prefix):
     st.markdown("#### ✨ 이런 질문은 어떠세요?")
-
     st.caption(
         f"현재 상황: {S.stage} · 왼쪽에서 변경할 수 있어요."
     )
@@ -746,7 +566,7 @@ def recommended_questions(prefix):
 
 
 # ============================================================
-# 4. 백서 RAG 프롬프트
+# 5. 백서 RAG 프롬프트
 # ============================================================
 
 WHITEPAPER_RULES = """
@@ -810,7 +630,6 @@ def format_docs(docs):
             if page_no(doc) is not None
             else ""
         )
-
         result.append(
             f"[근거 {i}{location}]\n"
             f"{doc.page_content}"
@@ -820,7 +639,7 @@ def format_docs(docs):
 
 
 # ============================================================
-# 5. PDF 자동 OCR + RAG 파이프라인
+# 6. PDF 읽기 + OCR + RAG
 # ============================================================
 
 def rag_pipeline(upload, document_type="whitepaper"):
@@ -881,7 +700,6 @@ def rag_pipeline(upload, document_type="whitepaper"):
                     ) or ""
                 )
 
-                # 텍스트가 거의 없는 페이지는 OCR 실행
                 if len("".join(content.split())) < 20:
                     try:
                         import pytesseract
@@ -926,7 +744,6 @@ def rag_pipeline(upload, document_type="whitepaper"):
                             content = recognized
 
                         ocr_pages += 1
-
                         del img, pix
 
                     except ImportError as e:
@@ -1131,9 +948,7 @@ def add_chat_doc(upload):
     return S.chat_doc
 
 
-def active_document(source=None):
-    source = source or S.chat_source_widget
-
+def active_document(source):
     doc = (
         S.chat_doc
         if source == "채팅 첨부 PDF"
@@ -1152,9 +967,7 @@ def active_document(source=None):
     return doc, prefix + doc["digest"]
 
 
-def answer_question(question, source=None):
-    source = source or S.chat_source_widget
-
+def answer_question(question, source):
     doc, doc_id = active_document(source)
 
     if doc is None:
@@ -1171,7 +984,6 @@ def answer_question(question, source=None):
             if source == "기본 백서"
             else "첨부 PDF에서 확인되지 않습니다."
         )
-
     else:
         response = doc["rag_chain"].invoke({
             "input": question,
@@ -1192,10 +1004,173 @@ def answer_question(question, source=None):
     ])
 
     S.sources_by_doc[doc_id] = found
+    S.last_sources = found
+    S.last_source_id = doc_id
+    S.last_source_name = doc["name"]
 
 
 # ============================================================
-# 6. 교안 기반 AI 퀴즈
+# 7. 일반 AI 대화 + 응원 메시지
+# ============================================================
+
+GENERAL_CHAT_RULES = """
+당신은 KT AIVLE School AI 학습 도우미 '에이블'입니다.
+
+사용자와 자연스럽고 친근한 한국어로 대화하세요.
+
+할 수 있는 일:
+- 공부 내용과 개념을 이해하기 쉽게 설명
+- 코딩과 프로젝트에 관한 질문 해결
+- 학습 계획과 일정 정리
+- 취업 준비와 포트폴리오 관련 조언
+- 일상적인 대화와 고민 상담
+
+사용자가 힘들다거나 지쳤다고 이야기하면
+먼저 감정을 인정하고 따뜻한 응원과
+현실적으로 실천할 수 있는 작은 해결책을 제안하세요.
+
+모르는 내용은 모른다고 답하세요.
+특히 AIVLE School의 기수별 공식 출결·수료·지원 규정은
+문서 확인 없이 확정적으로 말하지 말고
+해당 기수의 공식 공고 확인을 권하세요.
+
+일반 AI 대화에서는 등록된 PDF를 실제로
+검색하지 않았다면 PDF를 읽었다고 주장하지 마세요.
+
+답변은 질문에 맞게 자연스럽게 작성하세요.
+"""
+
+
+def general_chat(question):
+    history = [
+        ("system", GENERAL_CHAT_RULES)
+    ]
+
+    for m in S.messages[-10:]:
+        role = (
+            "human"
+            if m["role"] == "user"
+            else "ai"
+        )
+        history.append(
+            (role, m["content"])
+        )
+
+    history.append(
+        ("human", question)
+    )
+
+    response = llm(
+        temperature=0.5
+    ).invoke(history).content
+
+    S.messages.extend([
+        {
+            "role": "user",
+            "content": question,
+            "doc_id": "general"
+        },
+        {
+            "role": "assistant",
+            "content": response,
+            "doc_id": "general"
+        }
+    ])
+
+    S.last_sources = []
+    S.last_source_id = ""
+    S.last_source_name = ""
+
+
+def choose_source(question, mode):
+    if mode == "일반 AI 대화":
+        return None
+
+    if mode == "백서 기반":
+        return "기본 백서"
+
+    if mode == "첨부 PDF 기반":
+        return "채팅 첨부 PDF"
+
+    available = []
+
+    if S.whitepaper:
+        available.append("whitepaper")
+
+    if S.chat_doc:
+        available.append("attachment")
+
+    if not available:
+        return None
+
+    try:
+        prompt = (
+            "사용자 메시지에 답변하기 위해 "
+            "등록된 PDF 내용이 필요한지 분류하세요. "
+            "general, whitepaper, attachment "
+            "세 단어 중 하나만 출력하세요. "
+
+            "힘들다, 고민, 위로, 응원, 일상, 잡담, "
+            "일반 지식, 코딩에 관한 대화라면 general. "
+
+            "KT AIVLE School 규정, 출결, 수료, 혜택 등 "
+            "백서에 관한 질문이면 whitepaper. "
+
+            "첨부 PDF의 요약, 개념, 내용에 대한 질문이면 "
+            "attachment. "
+
+            "사용 가능한 문서: "
+            + ", ".join(available)
+            + ". "
+
+            "없는 문서를 선택하지 마세요. "
+            "문서가 꼭 필요한 경우에만 문서를 선택하세요. "
+
+            "사용자 질문: "
+            + question
+        )
+
+        route = llm(
+            temperature=0
+        ).invoke(prompt).content.strip().lower()
+
+        route = route.split()[0].strip(".,:;")
+
+        if (
+            route == "whitepaper"
+            and S.whitepaper
+        ):
+            return "기본 백서"
+
+        if (
+            route == "attachment"
+            and S.chat_doc
+        ):
+            return "채팅 첨부 PDF"
+
+    except Exception:
+        pass
+
+    return None
+
+
+def send_chat(question, mode):
+    source = choose_source(
+        question,
+        mode
+    )
+
+    if source:
+        answer_question(
+            question,
+            source
+        )
+    else:
+        general_chat(question)
+
+
+# ============================================================
+# 8. 교안 기반 AI 퀴즈
 # ============================================================
 
 def create_quiz(lesson, count, difficulty, topic):
@@ -1293,7 +1268,7 @@ def create_quiz(lesson, count, difficulty, topic):
 
 
 # ============================================================
-# 7. 온라인 랜덤 명언
+# 9. 온라인 랜덤 명언
 # ============================================================
 
 FALLBACK_QUOTES = [
@@ -1375,7 +1350,6 @@ def online_quotes():
 def quote_pool():
     try:
         return online_quotes()
-
     except Exception:
         return [
             {
@@ -1487,7 +1461,7 @@ def quote_card():
 
 
 # ============================================================
-# 8. 날씨와 달력
+# 10. 날씨와 달력
 # ============================================================
 
 CITIES = {
@@ -1575,7 +1549,7 @@ def calendar_html(year, month):
 
 
 # ============================================================
-# 9. 3단 레이아웃
+# 11. 3단 레이아웃
 # ============================================================
 
 left, middle, right = st.columns(
@@ -1585,7 +1559,7 @@ left, middle, right = st.columns(
 
 
 # ============================================================
-# 10. 왼쪽 메뉴
+# 12. 왼쪽 메뉴
 # ============================================================
 
 with left:
@@ -1647,18 +1621,11 @@ with left:
         "↻ 새 대화",
         use_container_width=True
     ):
-        _, doc_id = active_document()
-
-        S.messages = [
-            m for m in S.messages
-            if m.get("doc_id") != doc_id
-        ]
-
-        S.sources_by_doc.pop(
-            doc_id,
-            None
-        )
-
+        S.messages = []
+        S.sources_by_doc = {}
+        S.last_sources = []
+        S.last_source_id = ""
+        S.last_source_name = ""
         S.page = "AI 대화"
         st.rerun()
 
@@ -1666,7 +1633,7 @@ with left:
 
 
 # ============================================================
-# 11. 중앙 화면
+# 13. 중앙 화면
 # ============================================================
 
 with middle:
@@ -1676,7 +1643,7 @@ with middle:
         'AIVLE School 학습 도우미 ✦'
         '</div>'
         '<div class="a-sub">'
-        'PDF 기반 AI 대화 · 교안 퀴즈 · '
+        'AI 대화 · 교안 퀴즈 · '
         '출결 예측 · 학습 일정 관리'
         '</div>'
     )
@@ -1879,124 +1846,125 @@ with middle:
                 st.rerun()
 
     # --------------------------------------------------------
-    # AI 대화 - PDF 첨부는 + 버튼 하나만 사용
+    # AI 대화 - 일반 대화 + 백서 + PDF
     # --------------------------------------------------------
 
     elif S.page == "AI 대화":
 
-        st.subheader(
-            "💬 PDF 기반 AI 대화"
-        )
+        st.subheader("💬 AI 대화")
 
         st.caption(
-            "기본 백서는 유지하면서 "
-            "채팅에 별도 PDF를 첨부할 수 있어요. "
-            "이미지형 PDF는 자동 OCR 처리해요."
+            "PDF 없이도 공부·프로젝트·일상 고민을 "
+            "자유롭게 이야기해 보세요. "
+            "백서나 PDF가 있으면 문서에 근거한 "
+            "답변도 가능해요."
         )
 
-        st.caption(
-            "📎 PDF는 아래 채팅 입력창의 "
-            "+ 버튼으로 첨부해 주세요."
+        # PDF 첨부 칸은 하나만 유지
+        chat_file = st.file_uploader(
+            "📎 대화에 참고할 PDF 첨부 (선택)",
+            type=["pdf"],
+            key="chat_pdf_upload"
         )
 
-        st.caption(
-            "🔒 암호가 있는 PDF는 "
-            "암호 없는 버전으로 첨부해 주세요."
-        )
+        a, b = st.columns([1, 3])
 
-        if "next_chat_source" in S:
-            S.chat_source_widget = S.pop(
-                "next_chat_source"
-            )
+        with a:
+            if st.button(
+                "PDF 등록",
+                disabled=chat_file is None,
+                use_container_width=True
+            ):
+                try:
+                    with st.spinner(
+                        "첨부 PDF 분석 중..."
+                    ):
+                        add_chat_doc(chat_file)
 
-        options = []
+                    S.chat_mode = "첨부 PDF 기반"
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(
+                        f"PDF 첨부 오류: {e}"
+                    )
+
+        with b:
+            if S.chat_doc:
+                st.caption(
+                    "📄 첨부됨: "
+                    + S.chat_doc["name"]
+                )
+            else:
+                st.caption(
+                    "🔒 암호가 있는 PDF는 "
+                    "암호 없는 버전으로 등록해 주세요."
+                )
+
+        modes = [
+            "자동",
+            "일반 AI 대화"
+        ]
 
         if S.whitepaper:
-            options.append("기본 백서")
+            modes.append("백서 기반")
 
         if S.chat_doc:
-            options.append("채팅 첨부 PDF")
+            modes.append("첨부 PDF 기반")
 
-        if options:
-            if S.chat_source_widget not in options:
-                S.chat_source_widget = options[0]
+        if S.chat_mode not in modes:
+            S.chat_mode = "자동"
 
-            st.radio(
-                "질문할 문서",
-                options,
-                key="chat_source_widget",
-                horizontal=True
-            )
+        st.radio(
+            "대화 방식",
+            modes,
+            key="chat_mode",
+            horizontal=True
+        )
 
-            active, doc_id = active_document()
-
+        if S.chat_mode == "자동":
             st.caption(
-                "현재 질문 대상: **"
-                + active["name"]
-                + "**"
+                "✨ 자동: 일반 질문은 AI가 답하고, "
+                "백서·첨부 PDF에 관한 질문은 "
+                "해당 문서에서 근거를 찾아요."
             )
 
-        else:
-            doc_id = ""
+        elif S.chat_mode == "일반 AI 대화":
+            st.caption(
+                "💚 일반 AI 대화: 공부 질문, "
+                "고민, 응원 등 자유로운 대화"
+            )
 
-            st.info(
-                "문서 관리에서 백서를 등록하거나 "
-                "이 화면에서 PDF를 첨부해 주세요."
+        elif S.chat_mode == "백서 기반":
+            st.caption(
+                "📘 현재 백서: "
+                + S.whitepaper["name"]
+            )
+
+        elif S.chat_mode == "첨부 PDF 기반":
+            st.caption(
+                "📄 현재 첨부 PDF: "
+                + S.chat_doc["name"]
             )
 
         recommended_questions("chat")
 
         st.divider()
 
+        # 일반 대화와 문서 대화를 하나의 채팅창에 표시
         for m in S.messages:
-            if m.get("doc_id") == doc_id:
-                with st.chat_message(
-                    m["role"]
-                ):
-                    st.markdown(
-                        m["content"]
-                    )
+            with st.chat_message(
+                m["role"],
+                avatar=chat_avatar(m["role"])
+            ):
+                st.markdown(
+                    m["content"]
+                )
 
-        # 채팅 입력창의 + 버튼으로 PDF 첨부
-        entry = st.chat_input(
-            "질문을 입력하거나 + 버튼으로 PDF를 첨부하세요",
-            accept_file=True,
-            file_type=["pdf"]
+        # + 버튼 없는 일반 채팅 입력창
+        question = st.chat_input(
+            "무엇이든 편하게 물어보세요 😊"
         )
-
-        question = ""
-        source_override = None
-
-        if entry is not None:
-            question = (
-                entry.text or ""
-            ).strip()
-
-            if entry.files:
-                try:
-                    with st.spinner(
-                        "첨부 PDF 분석 중..."
-                    ):
-                        add_chat_doc(
-                            entry.files[0]
-                        )
-
-                    source_override = (
-                        "채팅 첨부 PDF"
-                    )
-
-                    S["next_chat_source"] = (
-                        "채팅 첨부 PDF"
-                    )
-
-                    if not question:
-                        st.rerun()
-
-                except Exception as e:
-                    st.error(
-                        f"PDF 첨부 오류: {e}"
-                    )
-                    question = ""
 
         if (
             not question
@@ -2006,31 +1974,21 @@ with middle:
             S.pending_question = None
 
         if question:
-            target, _ = active_document(
-                source_override
-            )
-
-            if target is None:
-                st.warning(
-                    "질문할 PDF를 먼저 등록해 주세요."
-                )
-
-            else:
-                try:
-                    with st.spinner(
-                        "선택한 PDF에서 근거를 찾는 중..."
-                    ):
-                        answer_question(
-                            question,
-                            source_override
-                        )
-
-                    st.rerun()
-
-                except Exception as e:
-                    st.error(
-                        f"답변 생성 오류: {e}"
+            try:
+                with st.spinner(
+                    "답변을 준비하고 있어요..."
+                ):
+                    send_chat(
+                        question,
+                        S.chat_mode
                     )
+
+                st.rerun()
+
+            except Exception as e:
+                st.error(
+                    f"답변 생성 오류: {e}"
+                )
 
     # --------------------------------------------------------
     # AI 학습 퀴즈
@@ -2503,7 +2461,8 @@ with middle:
 
         for message in S.messages:
             with st.chat_message(
-                message["role"]
+                message["role"],
+                avatar=chat_avatar(message["role"])
             ):
                 st.markdown(
                     message["content"]
@@ -2525,27 +2484,31 @@ with middle:
         ):
             S.messages = []
             S.sources_by_doc = {}
+            S.last_sources = []
+            S.last_source_id = ""
+            S.last_source_name = ""
             st.rerun()
 
 
 # ============================================================
-# 12. 오른쪽 검색 근거
+# 14. 오른쪽 검색 근거
 # ============================================================
 
 with right:
 
     st.markdown("#### 📑 검색 근거")
 
-    _, shown_id = active_document()
+    shown_id = S.last_source_id
+    sources = S.last_sources
 
-    sources = S.sources_by_doc.get(
-        shown_id,
-        []
-    )
-
-    if not sources:
+    if sources:
+        st.caption(
+            "📄 " + S.last_source_name
+        )
+    else:
         st.info(
-            "PDF에 질문하면 관련 근거가 표시돼요."
+            "백서나 PDF에 관한 질문을 하면 "
+            "관련 근거가 표시돼요."
         )
 
     for i, doc in enumerate(sources[:5], 1):
