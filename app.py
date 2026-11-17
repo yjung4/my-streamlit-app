@@ -21,6 +21,7 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -84,6 +85,7 @@ def api_key():
     key = os.getenv("OPENAI_API_KEY", "").strip()
     if key:
         return key
+
     try:
         return str(st.secrets.get("OPENAI_API_KEY", "")).strip()
     except Exception:
@@ -92,7 +94,10 @@ def api_key():
 
 def llm(temperature=0):
     if not api_key():
-        raise ValueError("Streamlit Secrets에 OPENAI_API_KEY를 설정해 주세요.")
+        raise ValueError(
+            "Streamlit Secrets에 OPENAI_API_KEY를 설정해 주세요."
+        )
+
     return ChatOpenAI(
         model="gpt-4o-mini",
         temperature=temperature,
@@ -106,6 +111,8 @@ def esc(value):
 
 # ============================================================
 # 2. 로고
+#    원본 파일은 수정하지 않고,
+#    다크모드에서 어두운 글자만 밝게 표시
 # ============================================================
 
 def image_path(stems):
@@ -113,13 +120,41 @@ def image_path(stems):
         for folder in (ROOT, ROOT / "images"):
             if not folder.exists():
                 continue
+
             for file in folder.iterdir():
                 if (
                     file.suffix.lower() in (".png", ".jpg", ".jpeg")
                     and file.stem.replace(" ", "") == stem.replace(" ", "")
                 ):
                     return str(file)
+
     return None
+
+
+@st.cache_data(show_spinner=False)
+def readable_dark_logo(path, modified_time):
+    with Image.open(path) as original:
+        image = original.convert("RGBA")
+
+    pixels = list(image.getdata())
+    corrected = []
+
+    for r, g, b, a in pixels:
+        brightness = max(r, g, b)
+        saturation = brightness - min(r, g, b)
+
+        # 로고의 검정·짙은 회색 글씨만 밝게 변경
+        # 민트색 아이콘과 밝은 부분은 유지
+        if a > 0 and brightness < 155 and saturation < 65:
+            corrected.append((232, 248, 243, a))
+        else:
+            corrected.append((r, g, b, a))
+
+    image.putdata(corrected)
+
+    output = BytesIO()
+    image.save(output, format="PNG")
+    return output.getvalue()
 
 
 def logo(kind, width=145):
@@ -136,7 +171,17 @@ def logo(kind, width=145):
     path = image_path(stems)
 
     if path:
-        st.image(path, width=width)
+        if S.dark and kind == "학습도우미 로고":
+            try:
+                corrected = readable_dark_logo(
+                    path,
+                    os.path.getmtime(path)
+                )
+                st.image(BytesIO(corrected), width=width)
+            except Exception:
+                st.image(path, width=width)
+        else:
+            st.image(path, width=width)
     else:
         st.markdown("**AIVLE School ✦**")
 
@@ -147,6 +192,7 @@ def avatar(role):
             "학습도우미 로고",
             "캐릭터 로고"
         ]) or "📗"
+
     return None
 
 
@@ -186,9 +232,6 @@ else:
 
 # ============================================================
 # 4. CSS
-#    - 선택창 배경/글씨 수정
-#    - 왼쪽 배너 고정 제거
-#    - 기존 UI 색상 유지
 # ============================================================
 
 CSS = """
@@ -301,77 +344,102 @@ CSS = """
 
 
 /* ========================================================
-   선택창: 흰색 배경과 보이지 않는 글씨 수정
+   선택창 색상 및 화살표 수정
    ======================================================== */
 
+/* 선택창 바깥쪽 */
+.stApp [data-testid="stSelectbox"],
+.stApp .stSelectbox {
+    color: __TEXT__ !important;
+}
+
+/* 실제 선택 영역 */
 .stApp [data-testid="stSelectbox"] [data-baseweb="select"],
+.stApp .stSelectbox [data-baseweb="select"] {
+    position: relative !important;
+    background: __SELECT__ !important;
+    color: __TEXT__ !important;
+    border-radius: 10px !important;
+    isolation: isolate;
+}
+
+/* 내부에 남아 있는 흰색 배경 제거 */
 .stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div > div > div,
 .stApp [data-testid="stSelectbox"] [data-baseweb="select"] [role="combobox"],
-.stApp [data-testid="stSelectbox"] [data-baseweb="select"] [aria-haspopup="listbox"] {
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"] [aria-haspopup="listbox"],
+.stApp .stSelectbox [data-baseweb="select"] > div {
+    background: __SELECT__ !important;
     background-color: __SELECT__ !important;
     background-image: none !important;
     color: __TEXT__ !important;
     -webkit-text-fill-color: __TEXT__ !important;
-    border-color: __LINE__ !important;
     opacity: 1 !important;
 }
 
-.stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+/* 모든 선택값 글자 */
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"] span,
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"] input,
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"] [data-testid="stMarkdownContainer"],
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"] [data-testid="stMarkdownContainer"] p,
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"] [aria-selected] {
+    color: __TEXT__ !important;
+    -webkit-text-fill-color: __TEXT__ !important;
+    opacity: 1 !important;
+}
+
+/* 선택창 테두리 */
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div:first-child {
     border: 1px solid __LINE__ !important;
     border-radius: 10px !important;
 }
 
-.stApp [data-testid="stSelectbox"] [data-baseweb="select"] div:not([role="listbox"]),
-.stApp [data-testid="stSelectbox"] [data-baseweb="select"] span,
-.stApp [data-testid="stSelectbox"] [data-baseweb="select"] input {
+/* 기존 SVG 화살표를 숨겨 네모 표시 방지 */
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"] svg {
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* CSS로 직접 그린 아래쪽 화살표 */
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"]::after {
+    content: "" !important;
+    position: absolute !important;
+    right: 18px !important;
+    top: 50% !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-right: 2px solid __ACCENT__ !important;
+    border-bottom: 2px solid __ACCENT__ !important;
+    transform: translateY(-70%) rotate(45deg) !important;
+    background: transparent !important;
+    pointer-events: none !important;
+    z-index: 20 !important;
+}
+
+/* 선택창 열렸을 때도 동일한 색상 */
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"]:focus-within,
+.stApp [data-testid="stSelectbox"] [data-baseweb="select"]:focus-within > div {
+    background: __SELECT__ !important;
     color: __TEXT__ !important;
-    -webkit-text-fill-color: __TEXT__ !important;
-    opacity: 1 !important;
-}
-
-.stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
-.stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div > div > div {
-    background-color: transparent !important;
-    color: __TEXT__ !important;
-    -webkit-text-fill-color: __TEXT__ !important;
-}
-
-.stApp [data-testid="stSelectbox"] svg {
-    color: __ACCENT__ !important;
-    fill: __ACCENT__ !important;
-    stroke: __ACCENT__ !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-.stApp [data-testid="stSelectbox"] svg path {
-    fill: currentColor !important;
-}
-
-.stApp [data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within {
     border-color: __ACCENT__ !important;
 }
 
+/* 펼쳐지는 옵션 목록 */
 [data-baseweb="popover"],
 [data-baseweb="popover"] > div,
 [data-baseweb="menu"],
 [role="listbox"] {
-    background-color: __PANEL__ !important;
+    background: __PANEL__ !important;
     color: __TEXT__ !important;
 }
 
 [data-baseweb="popover"] [role="option"],
 [data-baseweb="menu"] [role="option"],
 [role="listbox"] [role="option"] {
-    background-color: __PANEL__ !important;
+    background: __PANEL__ !important;
     color: __TEXT__ !important;
     -webkit-text-fill-color: __TEXT__ !important;
-}
-
-[data-baseweb="popover"] [role="option"]:hover,
-[data-baseweb="menu"] [role="option"]:hover,
-[role="listbox"] [role="option"]:hover {
-    background-color: __SOFT__ !important;
 }
 
 [data-baseweb="popover"] [role="option"] *,
@@ -381,9 +449,15 @@ CSS = """
     -webkit-text-fill-color: __TEXT__ !important;
 }
 
+[data-baseweb="popover"] [role="option"]:hover,
+[data-baseweb="menu"] [role="option"]:hover,
+[role="listbox"] [role="option"]:hover {
+    background: __SOFT__ !important;
+}
+
 
 /* ========================================================
-   왼쪽 배너: 고정하지 않고 일반 화면처럼 표시
+   왼쪽 배너는 원래처럼 일반 배치
    ======================================================== */
 
 .st-key-brand_logo,
@@ -401,12 +475,11 @@ CSS = """
     height: auto !important;
     overflow: visible !important;
     align-self: auto !important;
-    scrollbar-width: auto !important;
 }
 
 
 /* ========================================================
-   검색 근거 X 버튼
+   검색 근거 닫기 버튼
    ======================================================== */
 
 .stApp .st-key-close_sources button {
@@ -425,11 +498,6 @@ CSS = """
     -webkit-text-fill-color: __TEXT__ !important;
     font-size: 20px !important;
     font-weight: 700 !important;
-}
-
-.stApp .st-key-close_sources button:hover {
-    color: __ACCENT__ !important;
-    border-color: __ACCENT__ !important;
 }
 
 
@@ -529,7 +597,7 @@ CSS = """
 
 
 /* ========================================================
-   대화창 내부 스크롤
+   대화창 스크롤
    ======================================================== */
 
 .st-key-chat_history_area {
@@ -539,7 +607,7 @@ CSS = """
 
 
 /* ========================================================
-   답변 생성 중 알림
+   답변 생성 알림
    ======================================================== */
 
 .st-key-generating_notice {
@@ -894,24 +962,34 @@ def page_no(doc):
 
 def format_docs(docs):
     result = []
+
     for i, doc in enumerate(docs, 1):
         page = page_no(doc)
-        location = f"p.{page}" if page is not None else "페이지 구분 없음"
+
+        location = (
+            f"p.{page}"
+            if page is not None
+            else "페이지 구분 없음"
+        )
+
         result.append(
             f"[근거 {i} / {location}]\n{doc.page_content}"
         )
+
     return "\n\n".join(result)
 
 
 def ocr_image(image):
     try:
         import pytesseract
+
         return pytesseract.image_to_string(
             image.convert("RGB"),
             lang="kor+eng",
             config="--psm 3",
             timeout=90
         ).strip()
+
     except Exception as e:
         raise ValueError(
             "OCR 실행 오류입니다. "
@@ -953,11 +1031,17 @@ def read_document(upload):
                     )
 
                 total_pages = len(pdf)
-                progress = st.progress(0, text="문서 분석 중...")
+                progress = st.progress(
+                    0,
+                    text="문서 분석 중..."
+                )
 
                 for i in range(total_pages):
                     page = pdf.load_page(i)
-                    content = page.get_text("text", sort=True) or ""
+                    content = page.get_text(
+                        "text",
+                        sort=True
+                    ) or ""
 
                     if len("".join(content.split())) < 20:
                         scale = max(
@@ -1003,7 +1087,10 @@ def read_document(upload):
 
                     progress.progress(
                         (i + 1) / total_pages,
-                        text=f"문서 분석 중 {i + 1}/{total_pages}페이지"
+                        text=(
+                            f"문서 분석 중 "
+                            f"{i + 1}/{total_pages}페이지"
+                        )
                     )
 
         finally:
@@ -1017,18 +1104,27 @@ def read_document(upload):
         docs = [
             Document(
                 page_content=content,
-                metadata={"page": None, "source": name}
+                metadata={
+                    "page": None,
+                    "source": name
+                }
             )
         ]
+
         total_pages = 1
         ocr_pages = 1
 
     elif ext == "docx":
         with zipfile.ZipFile(BytesIO(data)) as z:
-            root = ET.fromstring(z.read("word/document.xml"))
+            root = ET.fromstring(
+                z.read("word/document.xml")
+            )
 
         ns = {
-            "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            "w": (
+                "http://schemas.openxmlformats.org/"
+                "wordprocessingml/2006/main"
+            )
         }
 
         content = "\n".join(
@@ -1042,30 +1138,44 @@ def read_document(upload):
         docs = [
             Document(
                 page_content=content,
-                metadata={"page": None, "source": name}
+                metadata={
+                    "page": None,
+                    "source": name
+                }
             )
         ]
+
         total_pages = 1
 
     elif ext == "pptx":
         with zipfile.ZipFile(BytesIO(data)) as z:
             names = [
                 n for n in z.namelist()
-                if re.fullmatch(r"ppt/slides/slide\d+\.xml", n)
+                if re.fullmatch(
+                    r"ppt/slides/slide\d+\.xml",
+                    n
+                )
             ]
 
             names.sort(
                 key=lambda n: int(
-                    re.search(r"slide(\d+)\.xml", n).group(1)
+                    re.search(
+                        r"slide(\d+)\.xml",
+                        n
+                    ).group(1)
                 )
             )
 
             ns = {
-                "a": "http://schemas.openxmlformats.org/drawingml/2006/main"
+                "a": (
+                    "http://schemas.openxmlformats.org/"
+                    "drawingml/2006/main"
+                )
             }
 
             for i, n in enumerate(names):
                 root = ET.fromstring(z.read(n))
+
                 content = "\n".join(
                     (t.text or "")
                     for t in root.findall(".//a:t", ns)
@@ -1075,7 +1185,10 @@ def read_document(upload):
                     docs.append(
                         Document(
                             page_content=content,
-                            metadata={"page": i, "source": name}
+                            metadata={
+                                "page": i,
+                                "source": name
+                            }
                         )
                     )
 
@@ -1085,17 +1198,27 @@ def read_document(upload):
         try:
             content = data.decode("utf-8-sig")
         except UnicodeDecodeError:
-            content = data.decode("cp949", errors="replace")
+            content = data.decode(
+                "cp949",
+                errors="replace"
+            )
 
         docs = [
             Document(
                 page_content=content,
-                metadata={"page": None, "source": name}
+                metadata={
+                    "page": None,
+                    "source": name
+                }
             )
         ]
+
         total_pages = 1
 
-    docs = [d for d in docs if d.page_content.strip()]
+    docs = [
+        d for d in docs
+        if d.page_content.strip()
+    ]
 
     if not docs:
         raise ValueError(
@@ -1112,9 +1235,14 @@ def read_document(upload):
 
 def rag_pipeline(upload, document_type="whitepaper"):
     if not api_key():
-        raise ValueError("OPENAI_API_KEY를 설정해 주세요.")
+        raise ValueError(
+            "OPENAI_API_KEY를 설정해 주세요."
+        )
 
-    digest = hashlib.sha256(upload.getvalue()).hexdigest()
+    digest = hashlib.sha256(
+        upload.getvalue()
+    ).hexdigest()
+
     docs, ocr_pages, total_pages = read_document(upload)
 
     splitter = RecursiveCharacterTextSplitter(
@@ -1147,7 +1275,9 @@ def rag_pipeline(upload, document_type="whitepaper"):
 
     if not store.get(limit=1)["ids"]:
         for i in range(0, len(chunks), 70):
-            store.add_documents(chunks[i:i + 70])
+            store.add_documents(
+                chunks[i:i + 70]
+            )
 
     retriever = store.as_retriever(
         search_type="similarity",
@@ -1161,19 +1291,22 @@ def rag_pipeline(upload, document_type="whitepaper"):
     )
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", rules + "\n\n[문서]\n{context}"),
+        (
+            "system",
+            rules + "\n\n[문서]\n{context}"
+        ),
         ("human", "{input}")
     ])
 
     def build_context(inputs):
         return format_docs(inputs["documents"])
 
-    from langchain_core.runnables import RunnableLambda
-
     chain = (
         {
             "context": RunnableLambda(build_context),
-            "input": RunnableLambda(lambda x: x["input"])
+            "input": RunnableLambda(
+                lambda x: x["input"]
+            )
         }
         | prompt
         | llm(temperature=0)
@@ -1194,22 +1327,33 @@ def rag_pipeline(upload, document_type="whitepaper"):
 
 
 def add_whitepaper(upload):
-    digest = hashlib.sha256(upload.getvalue()).hexdigest()
+    digest = hashlib.sha256(
+        upload.getvalue()
+    ).hexdigest()
 
-    if S.whitepaper and S.whitepaper["digest"] == digest:
+    if (
+        S.whitepaper
+        and S.whitepaper["digest"] == digest
+    ):
         return False
 
-    S.whitepaper = rag_pipeline(upload, "whitepaper")
+    S.whitepaper = rag_pipeline(
+        upload,
+        "whitepaper"
+    )
 
     S.messages = [
         m for m in S.messages
-        if not m.get("doc_id", "").startswith("whitepaper:")
+        if not m.get(
+            "doc_id", ""
+        ).startswith("whitepaper:")
     ]
 
     S.selected_source_message = None
 
     S.sources_by_doc = {
-        k: v for k, v in S.sources_by_doc.items()
+        k: v
+        for k, v in S.sources_by_doc.items()
         if not k.startswith("whitepaper:")
     }
 
@@ -1217,20 +1361,34 @@ def add_whitepaper(upload):
 
 
 def add_lesson(upload):
-    digest = hashlib.sha256(upload.getvalue()).hexdigest()
+    digest = hashlib.sha256(
+        upload.getvalue()
+    ).hexdigest()
 
     if digest in S.lessons:
         return False
 
-    S.lessons[digest] = rag_pipeline(upload, "lesson")
+    S.lessons[digest] = rag_pipeline(
+        upload,
+        "lesson"
+    )
+
     return True
 
 
 def add_chat_doc(upload):
-    digest = hashlib.sha256(upload.getvalue()).hexdigest()
+    digest = hashlib.sha256(
+        upload.getvalue()
+    ).hexdigest()
 
-    if not S.chat_doc or S.chat_doc["digest"] != digest:
-        S.chat_doc = rag_pipeline(upload, "chat")
+    if (
+        not S.chat_doc
+        or S.chat_doc["digest"] != digest
+    ):
+        S.chat_doc = rag_pipeline(
+            upload,
+            "chat"
+        )
 
     return S.chat_doc
 
@@ -1247,10 +1405,13 @@ def answer_question(question, source):
     )
 
     if doc is None:
-        raise ValueError("문서를 먼저 등록해 주세요.")
+        raise ValueError(
+            "문서를 먼저 등록해 주세요."
+        )
 
     doc_id = (
-        "chat:" if source == "채팅 첨부 자료"
+        "chat:"
+        if source == "채팅 첨부 자료"
         else "whitepaper:"
     ) + doc["digest"]
 
@@ -1298,17 +1459,25 @@ def answer_question(question, source):
 
 
 def general_chat(question):
-    history = [("system", GENERAL_CHAT_RULES)]
+    history = [
+        ("system", GENERAL_CHAT_RULES)
+    ]
 
     for m in S.messages[-10:]:
         history.append((
-            "human" if m["role"] == "user" else "ai",
+            "human"
+            if m["role"] == "user"
+            else "ai",
             m["content"]
         ))
 
-    history.append(("human", question))
+    history.append(
+        ("human", question)
+    )
 
-    response = llm(temperature=0.5).invoke(history).content
+    response = llm(
+        temperature=0.5
+    ).invoke(history).content
 
     S.messages.extend([
         {
@@ -1357,20 +1526,31 @@ def choose_source(question, mode):
             "AIVLE School 규정·출결·수료·혜택은 whitepaper, "
             "사용자가 첨부한 자료 내용 질문은 attachment. "
             "없는 문서를 선택하지 마세요. "
-            "사용 가능: " + ", ".join(available)
-            + ". 질문: " + question
+            "사용 가능: "
+            + ", ".join(available)
+            + ". 질문: "
+            + question
         )
 
         route = (
-            llm().invoke(prompt)
-            .content.strip().lower().split()[0]
+            llm()
+            .invoke(prompt)
+            .content.strip()
+            .lower()
+            .split()[0]
             .strip(".,:;")
         )
 
-        if route == "whitepaper" and S.whitepaper:
+        if (
+            route == "whitepaper"
+            and S.whitepaper
+        ):
             return "기본 백서"
 
-        if route == "attachment" and S.chat_doc:
+        if (
+            route == "attachment"
+            and S.chat_doc
+        ):
             return "채팅 첨부 자료"
 
     except Exception:
@@ -1380,10 +1560,16 @@ def choose_source(question, mode):
 
 
 def send_chat(question, mode):
-    source = choose_source(question, mode)
+    source = choose_source(
+        question,
+        mode
+    )
 
     if source:
-        answer_question(question, source)
+        answer_question(
+            question,
+            source
+        )
     else:
         general_chat(question)
 
@@ -1395,15 +1581,22 @@ def send_chat(question, mode):
 def create_quiz(lesson, count, difficulty, topic):
     chunks = lesson["chunks"]
 
-    n = min(max(count + 5, 10), len(chunks))
+    n = min(
+        max(count + 5, 10),
+        len(chunks)
+    )
 
     indices = sorted({
-        round(i * (len(chunks) - 1) / max(1, n - 1))
+        round(
+            i * (len(chunks) - 1)
+            / max(1, n - 1)
+        )
         for i in range(n)
     })
 
     context = "\n\n".join(
-        f"[자료 {j} / p.{page_no(chunks[i]) or '미확인'}]\n"
+        f"[자료 {j} / "
+        f"p.{page_no(chunks[i]) or '미확인'}]\n"
         f"{chunks[i].page_content[:1300]}"
         for j, i in enumerate(indices, 1)
     )
@@ -1440,26 +1633,40 @@ def create_quiz(lesson, count, difficulty, topic):
 """
 
     result = llm().bind(
-        response_format={"type": "json_object"}
+        response_format={
+            "type": "json_object"
+        }
     ).invoke(prompt)
 
     raw = json.loads(result.content)
 
     valid = [
-        q for q in raw.get("questions", [])
+        q
+        for q in raw.get("questions", [])
         if (
             isinstance(q, dict)
-            and isinstance(q.get("question"), str)
-            and isinstance(q.get("options"), list)
+            and isinstance(
+                q.get("question"),
+                str
+            )
+            and isinstance(
+                q.get("options"),
+                list
+            )
             and len(q["options"]) == 4
-            and all(isinstance(x, str) for x in q["options"])
+            and all(
+                isinstance(x, str)
+                for x in q["options"]
+            )
             and type(q.get("answer")) is int
             and 0 <= q["answer"] <= 3
         )
     ]
 
     if not valid:
-        raise ValueError("퀴즈 형식이 올바르지 않아요.")
+        raise ValueError(
+            "퀴즈 형식이 올바르지 않아요."
+        )
 
     S.quiz = valid[:count]
     S.quiz_doc = lesson["digest"]
@@ -1495,20 +1702,32 @@ FALLBACK_QUOTES = [
 ]
 
 
-@st.cache_data(ttl=7200, show_spinner=False)
+@st.cache_data(
+    ttl=7200,
+    show_spinner=False
+)
 def online_quotes():
     request = Request(
         "https://zenquotes.io/api/quotes",
-        headers={"User-Agent": "AIVLE-Study-Assistant/1.0"}
+        headers={
+            "User-Agent": "AIVLE-Study-Assistant/1.0"
+        }
     )
 
-    with urlopen(request, timeout=7) as response:
+    with urlopen(
+        request,
+        timeout=7
+    ) as response:
         data = json.load(response)
 
     quotes = [
         {
-            "text": str(item.get("q", "")).strip(),
-            "author": str(item.get("a", "")).strip(),
+            "text": str(
+                item.get("q", "")
+            ).strip(),
+            "author": str(
+                item.get("a", "")
+            ).strip(),
             "online": True
         }
         for item in data
@@ -1516,13 +1735,18 @@ def online_quotes():
             isinstance(item, dict)
             and item.get("q")
             and item.get("a")
-            and len(str(item.get("q", ""))) <= 350
-            and "Too many requests" not in str(item.get("q", ""))
+            and len(
+                str(item.get("q", ""))
+            ) <= 350
+            and "Too many requests"
+            not in str(item.get("q", ""))
         )
     ]
 
     if not quotes:
-        raise ValueError("온라인 명언을 가져오지 못했어요.")
+        raise ValueError(
+            "온라인 명언을 가져오지 못했어요."
+        )
 
     return quotes
 
@@ -1542,17 +1766,24 @@ def quote_pool():
 
 
 def translated_quote(item):
-    if not item["online"] or not api_key():
+    if (
+        not item["online"]
+        or not api_key()
+    ):
         return None
 
     key = item["text"]
 
     if key not in S.quote_translation_cache:
         try:
-            S.quote_translation_cache[key] = llm().invoke(
-                "다음 영어 명언을 자연스러운 한국어 한 문장으로 "
-                "번역하세요. 설명 없이 번역문만 답하세요.\n" + key
-            ).content.strip()
+            S.quote_translation_cache[key] = (
+                llm().invoke(
+                    "다음 영어 명언을 자연스러운 "
+                    "한국어 한 문장으로 번역하세요. "
+                    "설명 없이 번역문만 답하세요.\n"
+                    + key
+                ).content.strip()
+            )
         except Exception:
             S.quote_translation_cache[key] = None
 
@@ -1562,28 +1793,39 @@ def translated_quote(item):
 def quote_card():
     quotes = quote_pool()
 
-    if S.quote_index is None or S.quote_index >= len(quotes):
-        S.quote_index = random.randrange(len(quotes))
+    if (
+        S.quote_index is None
+        or S.quote_index >= len(quotes)
+    ):
+        S.quote_index = random.randrange(
+            len(quotes)
+        )
 
     item = quotes[S.quote_index]
     ko = translated_quote(item)
 
     body = (
-        f'<div style="font-size:17px;font-weight:600;line-height:1.6">'
+        '<div style="font-size:17px;'
+        'font-weight:600;line-height:1.6">'
         f'{esc(ko)}</div>'
         if ko else ""
     )
 
     st.html(f"""
     <div class="a-card">
-        <div class="a-muted" style="margin-bottom:9px">
+        <div class="a-muted"
+             style="margin-bottom:9px">
             오늘의 명언 · Daily Quote
         </div>
         {body}
-        <div style="font-size:14px;line-height:1.6;margin-top:8px">
+        <div style="font-size:14px;
+                    line-height:1.6;
+                    margin-top:8px">
             “{esc(item['text'])}”
         </div>
-        <div class="a-accent" style="margin-top:9px;font-size:12px">
+        <div class="a-accent"
+             style="margin-top:9px;
+                    font-size:12px">
             — {esc(item['author'])}
         </div>
     </div>
@@ -1599,18 +1841,27 @@ def quote_card():
         ):
             if len(quotes) > 1:
                 S.quote_index = (
-                    S.quote_index + random.randrange(1, len(quotes))
+                    S.quote_index
+                    + random.randrange(
+                        1,
+                        len(quotes)
+                    )
                 ) % len(quotes)
+
             st.rerun()
 
     with b:
         if item["online"]:
             st.caption(
-                "명언 제공: [ZenQuotes](https://zenquotes.io/) · "
+                "명언 제공: "
+                "[ZenQuotes](https://zenquotes.io/) · "
                 "영어 원문과 AI 번역으로 표시"
             )
         else:
-            st.caption("온라인 명언 연결이 원활하지 않아 예비 문구를 보여드려요.")
+            st.caption(
+                "온라인 명언 연결이 원활하지 않아 "
+                "예비 문구를 보여드려요."
+            )
 
 
 # ============================================================
@@ -1626,7 +1877,10 @@ CITIES = {
 }
 
 
-@st.cache_data(ttl=1800, show_spinner=False)
+@st.cache_data(
+    ttl=1800,
+    show_spinner=False
+)
 def weather(city):
     lat, lon = CITIES[city]
 
@@ -1637,7 +1891,10 @@ def weather(city):
         "&timezone=Asia%2FSeoul"
     )
 
-    with urlopen(url, timeout=6) as response:
+    with urlopen(
+        url,
+        timeout=6
+    ) as response:
         return json.load(response)["current"]
 
 
@@ -1646,25 +1903,46 @@ def weather(city):
 # ============================================================
 
 def calendar_html(year, month):
-    out = ['<table class="a-calendar"><tr>']
+    out = [
+        '<table class="a-calendar"><tr>'
+    ]
 
-    for day in ("월", "화", "수", "목", "금", "토", "일"):
+    for day in (
+        "월", "화", "수",
+        "목", "금", "토", "일"
+    ):
         out.append(f"<th>{day}</th>")
 
     out.append("</tr>")
 
-    for week in calendar.monthcalendar(year, month):
+    for week in calendar.monthcalendar(
+        year,
+        month
+    ):
         out.append("<tr>")
 
         for day in week:
             if not day:
-                out.append('<td class="empty"></td>')
+                out.append(
+                    '<td class="empty"></td>'
+                )
                 continue
 
-            current = date(year, month, day)
-            cls = "today" if current == TODAY else ""
+            current = date(
+                year,
+                month,
+                day
+            )
 
-            out.append(f'<td class="{cls}"><b>{day}</b>')
+            cls = (
+                "today"
+                if current == TODAY
+                else ""
+            )
+
+            out.append(
+                f'<td class="{cls}"><b>{day}</b>'
+            )
 
             events = [
                 e for e in S.events
@@ -1707,10 +1985,17 @@ else:
 # ============================================================
 
 with left:
-    with st.container(key="brand_logo"):
-        logo("학습도우미 로고", 195)
+    with st.container(
+        key="brand_logo"
+    ):
+        logo(
+            "학습도우미 로고",
+            195
+        )
 
-    st.caption("AI LEARNING WORKSPACE")
+    st.caption(
+        "AI LEARNING WORKSPACE"
+    )
 
     menus = [
         ("홈", "⌂"),
@@ -1727,7 +2012,11 @@ with left:
             f"{icon}  {page}",
             key="nav_" + page,
             use_container_width=True,
-            type="primary" if S.page == page else "secondary"
+            type=(
+                "primary"
+                if S.page == page
+                else "secondary"
+            )
         ):
             S.page = page
             st.rerun()
@@ -1738,16 +2027,29 @@ with left:
         key="stage"
     )
 
-    st.toggle("🌙 다크 모드", key="dark")
+    st.toggle(
+        "🌙 다크 모드",
+        key="dark"
+    )
 
     st.caption(
         "📘 백서: "
-        + (S.whitepaper["name"] if S.whitepaper else "미등록")
+        + (
+            S.whitepaper["name"]
+            if S.whitepaper
+            else "미등록"
+        )
     )
 
-    st.caption(f"📚 등록 교안: {len(S.lessons)}개")
+    st.caption(
+        f"📚 등록 교안: "
+        f"{len(S.lessons)}개"
+    )
 
-    if st.button("↻ 새 대화", use_container_width=True):
+    if st.button(
+        "↻ 새 대화",
+        use_container_width=True
+    ):
         S.messages = []
         S.sources_by_doc = {}
         S.last_sources = []
@@ -1759,7 +2061,10 @@ with left:
         S.page = "AI 대화"
         st.rerun()
 
-    logo("캐릭터 로고", 105)
+    logo(
+        "캐릭터 로고",
+        105
+    )
 
 
 # ============================================================
@@ -1768,9 +2073,12 @@ with left:
 
 with middle:
     st.html(
-        '<div class="a-title">AIVLE School 학습 도우미 ✦</div>'
+        '<div class="a-title">'
+        'AIVLE School 학습 도우미 ✦'
+        '</div>'
         '<div class="a-sub">'
-        'AI 대화 · 교안 퀴즈 · 출결 예측 · 학습 일정 관리'
+        'AI 대화 · 교안 퀴즈 · 출결 예측 · '
+        '학습 일정 관리'
         '</div>'
     )
 
@@ -1782,8 +2090,9 @@ with middle:
         st.html(
             '<div class="a-hero">'
             '<h3>오늘도 한 걸음 더 성장해요 ✨</h3>'
-            '<p>백서 질문부터 학습 복습과 일정 관리까지 '
-            '한곳에서 도와드릴게요.</p>'
+            '<p>백서 질문부터 학습 복습과 '
+            '일정 관리까지 한곳에서 '
+            '도와드릴게요.</p>'
             '</div>'
         )
 
@@ -1796,26 +2105,47 @@ with middle:
         )
 
         try:
-            info = weather(S.weather_city)
+            info = weather(
+                S.weather_city
+            )
+
             st.info(
                 f"🌤 {S.weather_city} "
                 f"{info['temperature_2m']}°C · "
-                f"습도 {info['relative_humidity_2m']}%"
+                f"습도 "
+                f"{info['relative_humidity_2m']}%"
             )
         except Exception:
-            st.caption("날씨 정보를 불러오지 못했어요.")
+            st.caption(
+                "날씨 정보를 불러오지 못했어요."
+            )
 
         recommended_questions("home")
 
         a, b, c = st.columns(3)
 
         for col, label, target in [
-            (a, "📚 교안 퀴즈", "AI 학습 퀴즈"),
-            (b, "📊 출결 예측", "출결 위험 예측"),
-            (c, "📅 일정 관리", "달력·스케줄러")
+            (
+                a,
+                "📚 교안 퀴즈",
+                "AI 학습 퀴즈"
+            ),
+            (
+                b,
+                "📊 출결 예측",
+                "출결 위험 예측"
+            ),
+            (
+                c,
+                "📅 일정 관리",
+                "달력·스케줄러"
+            )
         ]:
             with col:
-                if st.button(label, use_container_width=True):
+                if st.button(
+                    label,
+                    use_container_width=True
+                ):
                     S.page = target
                     st.rerun()
 
@@ -1828,28 +2158,43 @@ with middle:
         )[:3]
 
         if upcoming:
-            st.markdown("#### 다가오는 일정")
+            st.markdown(
+                "#### 다가오는 일정"
+            )
+
             for e in upcoming:
-                st.write(f"📌 {e['date']} · {e['title']}")
+                st.write(
+                    f"📌 {e['date']} · "
+                    f"{e['title']}"
+                )
 
     # --------------------------------------------------------
     # 문서 관리
     # --------------------------------------------------------
 
     elif S.page == "문서 관리":
-        st.subheader("📄 학습 자료 관리")
+        st.subheader(
+            "📄 학습 자료 관리"
+        )
 
         st.info(
             "PDF·Word(.docx)·PowerPoint(.pptx)·"
-            "이미지(PNG/JPG/WEBP)·TXT·Markdown을 등록할 수 있어요. "
+            "이미지(PNG/JPG/WEBP)·TXT·Markdown을 "
+            "등록할 수 있어요. "
             "이미지형 자료는 OCR로 글자를 읽어요."
         )
 
-        st.markdown("#### 1. 백서 전용 · AI 대화")
+        st.markdown(
+            "#### 1. 백서 전용 · AI 대화"
+        )
 
         st.caption(
             "현재 백서: "
-            + (S.whitepaper["name"] if S.whitepaper else "미등록")
+            + (
+                S.whitepaper["name"]
+                if S.whitepaper
+                else "미등록"
+            )
         )
 
         base_file = st.file_uploader(
@@ -1863,22 +2208,36 @@ with middle:
             disabled=base_file is None
         ):
             try:
-                with st.spinner("백서 검색 DB 생성 중..."):
-                    added = add_whitepaper(base_file)
+                with st.spinner(
+                    "백서 검색 DB 생성 중..."
+                ):
+                    added = add_whitepaper(
+                        base_file
+                    )
 
                 if added:
-                    st.success("백서 등록 완료! 교안은 그대로 유지돼요.")
+                    st.success(
+                        "백서 등록 완료! "
+                        "교안은 그대로 유지돼요."
+                    )
                 else:
-                    st.info("이미 등록된 백서예요.")
+                    st.info(
+                        "이미 등록된 백서예요."
+                    )
+
             except Exception as e:
                 st.error(str(e))
 
         st.divider()
-        st.markdown("#### 2. 학습 교안 전용 · AI 퀴즈")
+
+        st.markdown(
+            "#### 2. 학습 교안 전용 · AI 퀴즈"
+        )
 
         st.caption(
-            "🖼️ 이미지·스캔형 PDF는 한국어·영어 OCR을 "
-            "자동 적용해요. 암호가 있는 PDF는 암호 없는 "
+            "🖼️ 이미지·스캔형 PDF는 "
+            "한국어·영어 OCR을 자동 적용해요. "
+            "암호가 있는 PDF는 암호 없는 "
             "버전으로 등록해 주세요."
         )
 
@@ -1895,21 +2254,38 @@ with middle:
         ):
             for f in lesson_files or []:
                 try:
-                    with st.spinner(f"{f.name} 등록 중..."):
+                    with st.spinner(
+                        f"{f.name} 등록 중..."
+                    ):
                         added = add_lesson(f)
 
                     if added:
-                        st.success("등록 완료: " + f.name)
+                        st.success(
+                            "등록 완료: " + f.name
+                        )
                     else:
-                        st.info("이미 등록됨: " + f.name)
+                        st.info(
+                            "이미 등록됨: " + f.name
+                        )
+
                 except Exception as e:
-                    st.error(f"{f.name}: {e}")
+                    st.error(
+                        f"{f.name}: {e}"
+                    )
 
-        for doc_id, doc in list(S.lessons.items()):
+        for doc_id, doc in list(
+            S.lessons.items()
+        ):
             a, b = st.columns([5, 1])
-            a.write("📘 " + doc["name"])
 
-            if b.button("삭제", key="delete_" + doc_id):
+            a.write(
+                "📘 " + doc["name"]
+            )
+
+            if b.button(
+                "삭제",
+                key="delete_" + doc_id
+            ):
                 del S.lessons[doc_id]
 
                 if S.quiz_doc == doc_id:
@@ -1923,11 +2299,14 @@ with middle:
     # --------------------------------------------------------
 
     elif S.page == "AI 대화":
-        st.subheader("💬 AI 대화")
+        st.subheader(
+            "💬 AI 대화"
+        )
 
         st.caption(
-            "문서 없이도 공부·프로젝트·일상 고민을 이야기해 보세요. "
-            "자료를 등록하면 근거를 찾아 답변할 수 있어요."
+            "문서 없이도 공부·프로젝트·일상 고민을 "
+            "이야기해 보세요. 자료를 등록하면 "
+            "근거를 찾아 답변할 수 있어요."
         )
 
         chat_file = st.file_uploader(
@@ -1945,27 +2324,47 @@ with middle:
                 use_container_width=True
             ):
                 try:
-                    with st.spinner("첨부 자료 분석 중..."):
-                        add_chat_doc(chat_file)
+                    with st.spinner(
+                        "첨부 자료 분석 중..."
+                    ):
+                        add_chat_doc(
+                            chat_file
+                        )
 
                     S.chat_mode = "첨부 자료 기반"
                     st.rerun()
+
                 except Exception as e:
-                    st.error(f"자료 첨부 오류: {e}")
+                    st.error(
+                        f"자료 첨부 오류: {e}"
+                    )
 
         with b:
             if S.chat_doc:
-                st.caption("📄 첨부됨: " + S.chat_doc["name"])
+                st.caption(
+                    "📄 첨부됨: "
+                    + S.chat_doc["name"]
+                )
             else:
-                st.caption("PDF·DOCX·PPTX·이미지·TXT·MD 첨부 가능")
+                st.caption(
+                    "PDF·DOCX·PPTX·이미지·"
+                    "TXT·MD 첨부 가능"
+                )
 
-        modes = ["자동", "일반 AI 대화"]
+        modes = [
+            "자동",
+            "일반 AI 대화"
+        ]
 
         if S.whitepaper:
-            modes.append("백서 기반")
+            modes.append(
+                "백서 기반"
+            )
 
         if S.chat_doc:
-            modes.append("첨부 자료 기반")
+            modes.append(
+                "첨부 자료 기반"
+            )
 
         if S.chat_mode not in modes:
             S.chat_mode = "자동"
@@ -1979,45 +2378,74 @@ with middle:
 
         if S.chat_mode == "자동":
             st.caption(
-                "✨ 일반 질문은 AI가 답하고, 백서·첨부 자료 관련 "
-                "질문은 문서에서 근거를 찾아요."
+                "✨ 일반 질문은 AI가 답하고, "
+                "백서·첨부 자료 관련 질문은 "
+                "문서에서 근거를 찾아요."
             )
-        elif S.chat_mode == "일반 AI 대화":
-            st.caption("💚 공부 질문과 고민을 자유롭게 이야기해 보세요.")
-        elif S.chat_mode == "백서 기반":
-            st.caption("📘 현재 백서: " + S.whitepaper["name"])
-        else:
-            st.caption("📄 현재 첨부 자료: " + S.chat_doc["name"])
 
-        recommended_questions("chat")
+        elif S.chat_mode == "일반 AI 대화":
+            st.caption(
+                "💚 공부 질문과 고민을 "
+                "자유롭게 이야기해 보세요."
+            )
+
+        elif S.chat_mode == "백서 기반":
+            st.caption(
+                "📘 현재 백서: "
+                + S.whitepaper["name"]
+            )
+
+        else:
+            st.caption(
+                "📄 현재 첨부 자료: "
+                + S.chat_doc["name"]
+            )
+
+        recommended_questions(
+            "chat"
+        )
+
         st.divider()
 
         st.toggle(
             "📖 대화 전체 펼쳐 보기",
             key="chat_full_view",
-            help="끄면 대화창 내부만 스크롤하고, 켜면 전체를 펼쳐 봅니다."
+            help=(
+                "끄면 대화창 내부만 스크롤하고, "
+                "켜면 전체를 펼쳐 봅니다."
+            )
         )
 
         st.caption(
-            "대화가 길어져도 추천 질문과 자료 설정을 쉽게 확인하도록 "
-            "대화창 안에서 스크롤할 수 있어요."
+            "대화가 길어져도 추천 질문과 자료 설정을 "
+            "쉽게 확인하도록 대화창 안에서 "
+            "스크롤할 수 있어요."
         )
 
-        if S.pending_question and not S.pending_response:
+        if (
+            S.pending_question
+            and not S.pending_response
+        ):
             S.pending_response = {
                 "question": S.pending_question,
                 "mode": S.chat_mode
             }
+
             S.pending_question = None
 
         if S.pending_response:
-            with st.container(key="generating_notice"):
+            with st.container(
+                key="generating_notice"
+            ):
                 st.info(
                     "⏳ 질문을 받았어요. "
                     "에이블이 답변을 생성하고 있어요..."
                 )
 
-            pending = dict(S.pending_response)
+            pending = dict(
+                S.pending_response
+            )
+
             S.pending_response = None
 
             try:
@@ -2025,6 +2453,7 @@ with middle:
                     pending["question"],
                     pending["mode"]
                 )
+
             except Exception as e:
                 S.messages.extend([
                     {
@@ -2034,7 +2463,10 @@ with middle:
                     },
                     {
                         "role": "assistant",
-                        "content": "답변을 생성하지 못했어요: " + str(e),
+                        "content": (
+                            "답변을 생성하지 못했어요: "
+                            + str(e)
+                        ),
                         "doc_id": "error"
                     }
                 ])
@@ -2055,14 +2487,21 @@ with middle:
 
         with history:
             if not S.messages:
-                st.caption("에이블에게 무엇이든 편하게 물어보세요 😊")
+                st.caption(
+                    "에이블에게 무엇이든 "
+                    "편하게 물어보세요 😊"
+                )
 
-            for i, m in enumerate(S.messages):
+            for i, m in enumerate(
+                S.messages
+            ):
                 with st.chat_message(
                     m["role"],
                     avatar=avatar(m["role"])
                 ):
-                    st.markdown(m["content"])
+                    st.markdown(
+                        m["content"]
+                    )
 
                     if (
                         m["role"] == "assistant"
@@ -2071,11 +2510,15 @@ with middle:
                         pages = sorted({
                             src["page"]
                             for src in m["sources"]
-                            if isinstance(src.get("page"), int)
+                            if isinstance(
+                                src.get("page"),
+                                int
+                            )
                         })
 
                         pages_text = ", ".join(
-                            f"p.{n}" for n in pages[:6]
+                            f"p.{n}"
+                            for n in pages[:6]
                         )
 
                         if len(pages) > 6:
@@ -2083,14 +2526,22 @@ with middle:
 
                         st.caption(
                             "📚 검색된 참고 자료 · "
-                            + m.get("source_name", "문서")
+                            + m.get(
+                                "source_name",
+                                "문서"
+                            )
                             + " · "
-                            + (pages_text or "페이지 구분 없음")
+                            + (
+                                pages_text
+                                or "페이지 구분 없음"
+                            )
                         )
 
                         if st.button(
                             "📑 이 답변의 근거 보기",
-                            key=f"source_for_message_{i}"
+                            key=(
+                                f"source_for_message_{i}"
+                            )
                         ):
                             S.selected_source_message = i
                             S.show_sources = True
@@ -2106,6 +2557,7 @@ with middle:
                 "question": question,
                 "mode": S.chat_mode
             }
+
             st.rerun()
 
     # --------------------------------------------------------
@@ -2113,17 +2565,25 @@ with middle:
     # --------------------------------------------------------
 
     elif S.page == "AI 학습 퀴즈":
-        st.subheader("🧠 교안 기반 AI 학습 퀴즈")
+        st.subheader(
+            "🧠 교안 기반 AI 학습 퀴즈"
+        )
 
         if not S.lessons:
-            st.warning("문서 관리에서 학습 교안을 먼저 등록해 주세요.")
+            st.warning(
+                "문서 관리에서 학습 교안을 "
+                "먼저 등록해 주세요."
+            )
+
         else:
             ids = list(S.lessons)
 
             selected = st.selectbox(
                 "학습 교안 선택",
                 ids,
-                format_func=lambda x: S.lessons[x]["name"]
+                format_func=lambda x: (
+                    S.lessons[x]["name"]
+                )
             )
 
             count = st.select_slider(
@@ -2134,79 +2594,132 @@ with middle:
 
             difficulty = st.selectbox(
                 "난이도",
-                ["쉬움", "보통", "어려움"]
+                [
+                    "쉬움",
+                    "보통",
+                    "어려움"
+                ]
             )
 
             topic = st.text_input(
                 "출제 주제 (선택)",
-                placeholder="예: DX 개념, 데이터 분석"
+                placeholder=(
+                    "예: DX 개념, 데이터 분석"
+                )
             )
 
-            if st.button("✨ 교안으로 퀴즈 생성", type="primary"):
+            if st.button(
+                "✨ 교안으로 퀴즈 생성",
+                type="primary"
+            ):
                 try:
-                    with st.spinner("교안에서 문제 생성 중..."):
+                    with st.spinner(
+                        "교안에서 문제 생성 중..."
+                    ):
                         create_quiz(
                             S.lessons[selected],
                             count,
                             difficulty,
                             topic
                         )
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"퀴즈 생성 오류: {e}")
 
-            if S.quiz and S.quiz_doc == selected:
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(
+                        f"퀴즈 생성 오류: {e}"
+                    )
+
+            if (
+                S.quiz
+                and S.quiz_doc == selected
+            ):
                 st.divider()
 
-                for i, q in enumerate(S.quiz):
-                    st.markdown(f"**문제 {i + 1}. {q['question']}**")
+                for i, q in enumerate(
+                    S.quiz
+                ):
+                    st.markdown(
+                        f"**문제 {i + 1}. "
+                        f"{q['question']}**"
+                    )
 
                     st.radio(
                         "정답 선택",
                         range(4),
                         index=None,
                         disabled=S.quiz_done,
-                        format_func=lambda j, opts=q["options"]: (
+                        format_func=(
+                            lambda j, opts=q["options"]:
                             f"{chr(65 + j)}. {opts[j]}"
                         ),
-                        key=f"quiz_{S.quiz_id}_{i}"
+                        key=(
+                            f"quiz_{S.quiz_id}_{i}"
+                        )
                     )
 
                     if S.quiz_done:
-                        chosen = S.get(f"quiz_{S.quiz_id}_{i}")
-
-                        if chosen == q["answer"]:
-                            st.success("정답입니다!")
-                        else:
-                            st.error("정답: " + chr(65 + q["answer"]))
-
-                        st.caption(
-                            f"해설: {q.get('explanation', '')} · "
-                            f"교안 페이지: {q.get('page', '미확인')}"
+                        chosen = S.get(
+                            f"quiz_{S.quiz_id}_{i}"
                         )
 
-                if not S.quiz_done and st.button(
-                    "채점하기",
-                    type="primary"
+                        if chosen == q["answer"]:
+                            st.success(
+                                "정답입니다!"
+                            )
+                        else:
+                            st.error(
+                                "정답: "
+                                + chr(
+                                    65 + q["answer"]
+                                )
+                            )
+
+                        st.caption(
+                            f"해설: "
+                            f"{q.get('explanation', '')} · "
+                            f"교안 페이지: "
+                            f"{q.get('page', '미확인')}"
+                        )
+
+                if (
+                    not S.quiz_done
+                    and st.button(
+                        "채점하기",
+                        type="primary"
+                    )
                 ):
                     unanswered = any(
-                        S.get(f"quiz_{S.quiz_id}_{i}") is None
-                        for i in range(len(S.quiz))
+                        S.get(
+                            f"quiz_{S.quiz_id}_{i}"
+                        ) is None
+                        for i in range(
+                            len(S.quiz)
+                        )
                     )
 
                     if unanswered:
-                        st.warning("모든 문제에 답을 선택해 주세요.")
+                        st.warning(
+                            "모든 문제에 답을 "
+                            "선택해 주세요."
+                        )
                     else:
                         S.quiz_done = True
 
                         score = sum(
-                            S.get(f"quiz_{S.quiz_id}_{i}") == q["answer"]
-                            for i, q in enumerate(S.quiz)
+                            S.get(
+                                f"quiz_{S.quiz_id}_{i}"
+                            ) == q["answer"]
+                            for i, q in enumerate(
+                                S.quiz
+                            )
                         )
 
                         S.quiz_history.append({
                             "date": TODAY.isoformat(),
-                            "document": S.lessons[selected]["name"],
+                            "document": (
+                                S.lessons[selected]["name"]
+                            ),
                             "score": score,
                             "total": len(S.quiz)
                         })
@@ -2215,21 +2728,31 @@ with middle:
 
                 if S.quiz_done:
                     score = sum(
-                        S.get(f"quiz_{S.quiz_id}_{i}") == q["answer"]
-                        for i, q in enumerate(S.quiz)
+                        S.get(
+                            f"quiz_{S.quiz_id}_{i}"
+                        ) == q["answer"]
+                        for i, q in enumerate(
+                            S.quiz
+                        )
                     )
 
-                    st.metric("퀴즈 점수", f"{score} / {len(S.quiz)}")
+                    st.metric(
+                        "퀴즈 점수",
+                        f"{score} / {len(S.quiz)}"
+                    )
 
     # --------------------------------------------------------
     # 출결 위험 예측
     # --------------------------------------------------------
 
     elif S.page == "출결 위험 예측":
-        st.subheader("📊 출결 위험 예측")
+        st.subheader(
+            "📊 출결 위험 예측"
+        )
 
         st.warning(
-            "공식 출결 판정이 아닌 가정 기반 시뮬레이션입니다. "
+            "공식 출결 판정이 아닌 "
+            "가정 기반 시뮬레이션입니다. "
             "실제 교육 규정을 확인해 주세요."
         )
 
@@ -2243,7 +2766,10 @@ with middle:
             "현재까지 진행된 교육일 수",
             min_value=1,
             max_value=int(total),
-            value=min(60, int(total))
+            value=min(
+                60,
+                int(total)
+            )
         )
 
         a, b, c, d = st.columns(4)
@@ -2274,71 +2800,108 @@ with middle:
         )
 
         conversion = st.number_input(
-            "지각·외출·조퇴 몇 회를 결석 1일로 환산할까요?",
+            "지각·외출·조퇴 몇 회를 "
+            "결석 1일로 환산할까요?",
             min_value=1,
             value=3
         )
 
-        goal = st.slider("목표 출석률 (%)", 50, 100, 80)
+        goal = st.slider(
+            "목표 출석률 (%)",
+            50,
+            100,
+            80
+        )
 
         future_absent = st.number_input(
             "향후 추가 결석 예상 일수",
             min_value=0,
-            max_value=int(total - elapsed),
+            max_value=int(
+                total - elapsed
+            ),
             value=0
         )
 
         future_partial = st.number_input(
-            "향후 지각·외출·조퇴 예상 횟수 합계",
+            "향후 지각·외출·조퇴 "
+            "예상 횟수 합계",
             min_value=0,
             value=0
         )
 
         current_missed = (
             int(absent)
-            + int(late + outing + early) // int(conversion)
+            + int(
+                late + outing + early
+            ) // int(conversion)
         )
 
         future_missed = (
-            int(absent + future_absent)
+            int(
+                absent + future_absent
+            )
             + int(
-                late + outing + early + future_partial
+                late + outing
+                + early + future_partial
             ) // int(conversion)
         )
 
         current_rate = max(
             0,
-            100 * (int(elapsed) - current_missed) / int(elapsed)
+            100 * (
+                int(elapsed) - current_missed
+            ) / int(elapsed)
         )
 
         predicted = max(
             0,
-            100 * (int(total) - future_missed) / int(total)
+            100 * (
+                int(total) - future_missed
+            ) / int(total)
         )
 
         x, y = st.columns(2)
 
-        x.metric("현재 추정 출석률", f"{current_rate:.1f}%")
+        x.metric(
+            "현재 추정 출석률",
+            f"{current_rate:.1f}%"
+        )
 
         y.metric(
             "최종 예상 출석률",
             f"{predicted:.1f}%",
-            delta=f"{predicted - goal:+.1f}%p (목표 대비)"
+            delta=(
+                f"{predicted - goal:+.1f}%p "
+                "(목표 대비)"
+            )
         )
 
-        st.progress(min(1.0, predicted / 100))
+        st.progress(
+            min(
+                1.0,
+                predicted / 100
+            )
+        )
 
         if predicted < goal:
-            st.error("목표 출석률에 미달할 것으로 예상돼요.")
+            st.error(
+                "목표 출석률에 미달할 "
+                "것으로 예상돼요."
+            )
         else:
-            st.success("목표 출석률 이상으로 예상돼요.")
+            st.success(
+                "목표 출석률 이상으로 "
+                "예상돼요."
+            )
 
     # --------------------------------------------------------
     # 달력 · 스케줄러
     # --------------------------------------------------------
 
     elif S.page == "달력·스케줄러":
-        st.subheader("📅 달력 · 스케줄러")
+        st.subheader(
+            "📅 달력 · 스케줄러"
+        )
 
         a, b = st.columns(2)
 
@@ -2355,17 +2918,42 @@ with middle:
             index=TODAY.month - 1
         )
 
-        st.html(calendar_html(int(year), month))
-        st.markdown("#### 일정 추가")
+        st.html(
+            calendar_html(
+                int(year),
+                month
+            )
+        )
 
-        with st.form("event_form", clear_on_submit=True):
-            when = st.date_input("날짜", value=TODAY)
+        st.markdown(
+            "#### 일정 추가"
+        )
+
+        with st.form(
+            "event_form",
+            clear_on_submit=True
+        ):
+            when = st.date_input(
+                "날짜",
+                value=TODAY
+            )
+
             title = st.text_input(
                 "일정 이름",
-                placeholder="예: 빅프로젝트 발표"
+                placeholder=(
+                    "예: 빅프로젝트 발표"
+                )
             )
-            note = st.text_input("메모 (선택)")
-            submitted = st.form_submit_button("일정 등록")
+
+            note = st.text_input(
+                "메모 (선택)"
+            )
+
+            submitted = (
+                st.form_submit_button(
+                    "일정 등록"
+                )
+            )
 
         if submitted:
             if title.strip():
@@ -2375,13 +2963,21 @@ with middle:
                     "title": title.strip(),
                     "note": note
                 })
+
                 st.rerun()
             else:
-                st.warning("일정 이름을 입력해 주세요.")
+                st.warning(
+                    "일정 이름을 입력해 주세요."
+                )
 
-        st.markdown("#### 등록된 일정")
+        st.markdown(
+            "#### 등록된 일정"
+        )
 
-        for event in sorted(S.events, key=lambda x: x["date"]):
+        for event in sorted(
+            S.events,
+            key=lambda x: x["date"]
+        ):
             a, b = st.columns([5, 1])
 
             a.write(
@@ -2390,11 +2986,15 @@ with middle:
                 f"{event.get('note', '')}"
             )
 
-            if b.button("삭제", key="event_" + event["id"]):
+            if b.button(
+                "삭제",
+                key="event_" + event["id"]
+            ):
                 S.events = [
                     x for x in S.events
                     if x["id"] != event["id"]
                 ]
+
                 st.rerun()
 
         st.download_button(
@@ -2414,12 +3014,20 @@ with middle:
             key="event_backup"
         )
 
-        if st.button("백업 복원", disabled=backup is None):
+        if st.button(
+            "백업 복원",
+            disabled=backup is None
+        ):
             try:
-                restored = json.load(backup)
+                restored = json.load(
+                    backup
+                )
 
                 if (
-                    not isinstance(restored, list)
+                    not isinstance(
+                        restored,
+                        list
+                    )
                     or not all(
                         isinstance(x, dict)
                         and "date" in x
@@ -2427,18 +3035,24 @@ with middle:
                         for x in restored
                     )
                 ):
-                    raise ValueError("일정 형식이 올바르지 않아요.")
+                    raise ValueError(
+                        "일정 형식이 올바르지 않아요."
+                    )
 
                 S.events = [
                     {
                         "id": uuid.uuid4().hex,
                         "date": str(x["date"]),
                         "title": str(x["title"]),
-                        "note": str(x.get("note", ""))
+                        "note": str(
+                            x.get("note", "")
+                        )
                     }
                     for x in restored
                 ]
+
                 st.rerun()
+
             except Exception as e:
                 st.error(str(e))
 
@@ -2447,17 +3061,25 @@ with middle:
     # --------------------------------------------------------
 
     elif S.page == "대화 로그":
-        st.subheader("🗂 대화 로그")
+        st.subheader(
+            "🗂 대화 로그"
+        )
 
         if not S.messages:
-            st.info("아직 대화 기록이 없어요.")
+            st.info(
+                "아직 대화 기록이 없어요."
+            )
 
         for message in S.messages:
             with st.chat_message(
                 message["role"],
-                avatar=avatar(message["role"])
+                avatar=avatar(
+                    message["role"]
+                )
             ):
-                st.markdown(message["content"])
+                st.markdown(
+                    message["content"]
+                )
 
         st.download_button(
             "대화 JSON 다운로드",
@@ -2470,7 +3092,9 @@ with middle:
             mime="application/json"
         )
 
-        if st.button("대화 기록 삭제"):
+        if st.button(
+            "대화 기록 삭제"
+        ):
             S.messages = []
             S.sources_by_doc = {}
             S.last_sources = []
@@ -2479,6 +3103,7 @@ with middle:
             S.selected_source_message = None
             S.show_sources = False
             S.pending_response = None
+
             st.rerun()
 
 
@@ -2488,10 +3113,16 @@ with middle:
 
 if right is not None:
     with right:
-        with st.container(key="source_panel_anchor"):
-            st.markdown("#### 📑 검색 근거")
+        with st.container(
+            key="source_panel_anchor"
+        ):
+            st.markdown(
+                "#### 📑 검색 근거"
+            )
 
-            with st.container(key="close_sources"):
+            with st.container(
+                key="close_sources"
+            ):
                 if st.button(
                     "✕",
                     key="close_sources_button",
@@ -2500,50 +3131,80 @@ if right is not None:
                     S.show_sources = False
                     st.rerun()
 
-            selected = S.get("selected_source_message")
+            selected = S.get(
+                "selected_source_message"
+            )
 
             if (
-                not isinstance(selected, int)
-                or not (0 <= selected < len(S.messages))
-                or not S.messages[selected].get("sources")
+                not isinstance(
+                    selected,
+                    int
+                )
+                or not (
+                    0 <= selected < len(S.messages)
+                )
+                or not S.messages[selected].get(
+                    "sources"
+                )
             ):
                 selected = None
 
             if selected is None:
                 st.info(
                     "문서 기반 답변 아래의 "
-                    "‘이 답변의 근거 보기’를 누르면 "
-                    "해당 답변의 근거가 표시돼요."
+                    "‘이 답변의 근거 보기’를 "
+                    "누르면 해당 답변의 "
+                    "근거가 표시돼요."
                 )
+
             else:
-                answer = S.messages[selected]
+                answer = S.messages[
+                    selected
+                ]
 
                 if selected > 0:
                     st.markdown(
                         "**질문:** "
-                        + S.messages[selected - 1].get(
-                            "content", ""
+                        + S.messages[
+                            selected - 1
+                        ].get(
+                            "content",
+                            ""
                         )[:150]
                     )
 
                 st.caption(
                     "📄 참고 자료: "
-                    + answer.get("source_name", "문서")
+                    + answer.get(
+                        "source_name",
+                        "문서"
+                    )
                 )
 
                 for i, src in enumerate(
-                    answer.get("sources", [])[:8],
+                    answer.get(
+                        "sources",
+                        []
+                    )[:8],
                     1
                 ):
-                    page = src.get("page")
+                    page = src.get(
+                        "page"
+                    )
 
                     loc = (
                         f"p.{page}"
-                        if isinstance(page, int)
+                        if isinstance(
+                            page,
+                            int
+                        )
                         else "페이지 구분 없음"
                     )
 
-                    content = src.get("content", "")
+                    content = src.get(
+                        "content",
+                        ""
+                    )
 
                     snippet = re.sub(
                         r"\s+",
@@ -2563,13 +3224,17 @@ if right is not None:
                     """)
 
                     with st.expander(
-                        f"근거 {i} · {loc} 원문 보기"
+                        f"근거 {i} · "
+                        f"{loc} 원문 보기"
                     ):
                         st.text_area(
                             "문서 내용",
                             value=content,
                             height=220,
                             disabled=True,
-                            key=f"source_text_{selected}_{i}",
+                            key=(
+                                f"source_text_"
+                                f"{selected}_{i}"
+                            ),
                             label_visibility="collapsed"
                         )
