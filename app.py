@@ -444,6 +444,25 @@ for key, value in C.items():
 
 st.html(STYLE)
 
+# 로고 컨테이너의 민트색 바탕 제거 (라이트/다크 공통)
+st.html("""
+<style>
+.st-key-brand_logo,
+.st-key-brand_logo > div,
+.st-key-brand_logo [data-testid="stVerticalBlock"],
+.st-key-brand_logo [data-testid="stImage"] {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+.st-key-brand_logo {
+    padding: 0 !important;
+    margin-bottom: 10px !important;
+    border: none !important;
+}
+</style>
+""")
+
 
 # ============================================================
 # 3-1. 기존 다크모드 가독성 수정 유지
@@ -627,11 +646,37 @@ if S.dark:
         -webkit-text-fill-color: #EEF8F5 !important;
     }
 
-    .st-key-brand_logo {
-        background-color: #EAF8F4 !important;
-        border-radius: 13px !important;
-        padding: 8px 10px !important;
-        margin-bottom: 10px !important;
+
+    /* 드롭다운 선택 목록 다크모드 적용 */
+    body [data-baseweb="popover"],
+    body [data-baseweb="popover"] [data-baseweb="menu"],
+    body [data-baseweb="popover"] [role="listbox"],
+    body [data-baseweb="popover"] [role="option"],
+    body [data-baseweb="select"] [role="listbox"],
+    body [data-baseweb="calendar"] {
+        background: #1A3034 !important;
+        color: #EEF8F5 !important;
+        color-scheme: dark !important;
+    }
+
+    body [data-baseweb="popover"] [role="option"]:hover,
+    body [data-baseweb="popover"] [aria-selected="true"] {
+        background: #24413E !important;
+    }
+
+    body [data-baseweb="popover"] input,
+    body [data-baseweb="popover"] button,
+    body [data-baseweb="popover"] span,
+    body [data-baseweb="popover"] div,
+    body [data-baseweb="calendar"] button,
+    body [data-baseweb="calendar"] span {
+        color: #EEF8F5 !important;
+    }
+
+    .stApp [data-testid="stRadio"] label,
+    .stApp [data-testid="stToggle"] label,
+    .stApp [data-testid="stCheckbox"] label {
+        color: #EEF8F5 !important;
     }
 
     </style>
@@ -707,7 +752,7 @@ if S.page == "AI 대화":
     @media (max-width: 1100px) {
         .stApp [data-testid="stChatInput"] {
             left: 20% !important;
-            right: 4% !important;
+            right: __CHAT_RIGHT__ !important;
             bottom: 12px !important;
         }
     }
@@ -1902,7 +1947,7 @@ with middle:
     # 상단 검색 근거 토글 버튼
 
     title_col, toggle_col = st.columns(
-        [5, 1.4],
+        [3.8, 2.2],
         vertical_alignment="center"
     )
 
@@ -2807,17 +2852,12 @@ if right is not None:
 
     with right:
 
-        header, close = st.columns(
-            [3, 1],
-            vertical_alignment="center"
-        )
+        st.markdown("#### 📑 검색 근거")
 
-        header.markdown("#### 📑 검색 근거")
-
-        if close.button(
-            "✕",
+        # 좁은 우측 열에서도 닫기 버튼이 잘리지 않도록 한 줄 전체 사용
+        if st.button(
+            "✕ 검색 근거 닫기",
             key="close_sources",
-            help="검색 근거 닫기",
             use_container_width=True
         ):
             S.show_sources = False
