@@ -683,6 +683,32 @@ CSS = """
 }
 
 
+
+/* 일정 등록 버튼 가독성 수정 시작 */
+
+.stApp [data-testid="stFormSubmitButton"] button {
+    background-color: #8AE1CE !important;
+    color: #102024 !important;
+    border: 1px solid #8AE1CE !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+.stApp [data-testid="stFormSubmitButton"] button p,
+.stApp [data-testid="stFormSubmitButton"] button span {
+    color: #102024 !important;
+    -webkit-text-fill-color: #102024 !important;
+    opacity: 1 !important;
+}
+
+.stApp [data-testid="stFormSubmitButton"] button:hover {
+    background-color: #A5EBDD !important;
+    border-color: #A5EBDD !important;
+}
+
+/* 일정 등록 버튼 가독성 수정 끝 */
+
 /* ========================================================
    4-11. 달력
    ======================================================== */
