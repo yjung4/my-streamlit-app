@@ -22,9 +22,11 @@ from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+
 # ============================================================
 # 1. 기본 설정
 # ============================================================
+
 st.set_page_config(
     page_title="AIVLE School | AI 학습 도우미",
     page_icon="📗",
@@ -110,7 +112,7 @@ def logo(stem, width=145):
 
 
 # ============================================================
-# 2. 라이트 / 다크 모드 디자인
+# 2. 라이트 / 다크 모드 색상
 # ============================================================
 
 C = ({
@@ -139,8 +141,10 @@ C = ({
     "select": "#FFFFFF",
 })
 
+
 STYLE = """
 <style>
+
 :root {
     color-scheme: __SCHEME__;
 }
@@ -160,6 +164,8 @@ STYLE = """
     padding-top: 1.1rem;
 }
 
+/* 전체 글씨 */
+
 .stApp [data-testid="stMarkdownContainer"],
 .stApp [data-testid="stMarkdownContainer"] p,
 .stApp [data-testid="stMarkdownContainer"] li,
@@ -176,6 +182,8 @@ STYLE = """
 .stApp [data-testid="stCaptionContainer"] p {
     color: __MUTED__ !important;
 }
+
+/* 일반 버튼 */
 
 .stApp .stButton > button,
 .stApp [data-testid="stPopover"] button {
@@ -194,6 +202,8 @@ STYLE = """
     background: __SOFT__ !important;
     color: __ACCENT__ !important;
 }
+
+/* 기본 입력창 */
 
 .stApp [data-baseweb="input"],
 .stApp [data-baseweb="textarea"],
@@ -215,6 +225,8 @@ STYLE = """
     -webkit-text-fill-color: __MUTED__ !important;
 }
 
+/* 메트릭 */
+
 .stApp [data-testid="stMetric"] {
     background: __PANEL__;
     border: 1px solid __LINE__;
@@ -226,6 +238,8 @@ STYLE = """
 .stApp [data-testid="stMetricLabel"] {
     color: __TEXT__ !important;
 }
+
+/* 채팅 */
 
 .stApp [data-testid="stChatMessage"] {
     background: __PANEL__;
@@ -303,7 +317,7 @@ STYLE = """
     color: __TEXT__ !important;
 }
 
-/* 앱 카드 */
+/* 카드 디자인 */
 
 .a-title {
     font-size: 25px;
@@ -391,6 +405,7 @@ STYLE = """
     white-space: nowrap;
     text-overflow: ellipsis;
 }
+
 </style>
 """
 
@@ -409,7 +424,7 @@ st.html(STYLE)
 
 
 # ============================================================
-# 2-1. 다크모드 가독성 개선
+# 2-1. 다크모드 가독성 전체 보정
 # ============================================================
 
 if S.dark:
@@ -436,7 +451,7 @@ if S.dark:
         color-scheme: dark !important;
     }
 
-    /* 나의 상황, 지역, 교안, 난이도, 월 선택 */
+    /* 나의 상황, 지역, 교안, 난이도 선택 */
 
     .stApp [data-testid="stSelectbox"] [data-baseweb="select"] *,
     .stApp [data-testid="stMultiSelect"] [data-baseweb="select"] *,
@@ -595,6 +610,84 @@ if S.dark:
         color: #24444A !important;
     }
 
+    /* 다운로드 버튼과 일정 등록 버튼 */
+
+    .stApp [data-testid="stDownloadButton"] button,
+    .stApp [data-testid="stFormSubmitButton"] button,
+    .stApp div.stDownloadButton > button,
+    .stApp div.stFormSubmitButton > button {
+        background: #24413E !important;
+        background-color: #24413E !important;
+        color: #EEF8F5 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
+        border: 1px solid #52746C !important;
+        border-radius: 11px !important;
+        opacity: 1 !important;
+    }
+
+    .stApp [data-testid="stDownloadButton"] button *,
+    .stApp [data-testid="stFormSubmitButton"] button *,
+    .stApp div.stDownloadButton > button *,
+    .stApp div.stFormSubmitButton > button * {
+        color: #EEF8F5 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
+    }
+
+    .stApp [data-testid="stDownloadButton"] button:hover,
+    .stApp [data-testid="stFormSubmitButton"] button:hover {
+        background: #30564E !important;
+        border-color: #8AE1CE !important;
+    }
+
+    /* 비활성화된 다운로드 및 폼 버튼 */
+
+    .stApp [data-testid="stDownloadButton"] button:disabled,
+    .stApp [data-testid="stFormSubmitButton"] button:disabled {
+        background: #1A3034 !important;
+        color: #B7CBC8 !important;
+        -webkit-text-fill-color: #B7CBC8 !important;
+        opacity: 0.85 !important;
+    }
+
+    /* 날짜 선택창 내부 흰 배경 제거 */
+
+    .stApp [data-testid="stDateInput"] [data-baseweb="input"],
+    .stApp [data-testid="stDateInput"] [data-baseweb="input"] > div,
+    .stApp [data-testid="stDateInput"] [data-baseweb="input"] > div > div,
+    .stApp [data-testid="stDateInput"] input,
+    .stApp [data-testid="stDateInput"] [role="group"] {
+        background: #1A3034 !important;
+        background-color: #1A3034 !important;
+        color: #EEF8F5 !important;
+        -webkit-text-fill-color: #EEF8F5 !important;
+        border-color: #52746C !important;
+        color-scheme: dark !important;
+    }
+
+    .stApp [data-testid="stDateInput"] input::placeholder {
+        color: #B7CBC8 !important;
+        -webkit-text-fill-color: #B7CBC8 !important;
+    }
+
+    .stApp [data-testid="stDateInput"] svg {
+        color: #8AE1CE !important;
+        fill: none !important;
+    }
+
+    /* 선택창 오른쪽 화살표의 흰 배경 제거 */
+
+    .stApp [data-baseweb="select"] > div > div,
+    .stApp [data-baseweb="select"] [role="combobox"] > div {
+        background-color: #1A3034 !important;
+    }
+
+    /* 채팅 파일 이름 */
+
+    .stApp [data-testid="stFileUploaderFile"] *,
+    .stApp [data-testid="stChatInput"] * {
+        color: #EEF8F5 !important;
+    }
+
     </style>
     """)
 
@@ -633,6 +726,7 @@ GUIDES = {
 
 def recommended_questions(prefix):
     st.markdown("#### ✨ 이런 질문은 어떠세요?")
+
     st.caption(
         f"현재 상황: {S.stage} · 왼쪽에서 변경할 수 있어요."
     )
@@ -1785,7 +1879,7 @@ with middle:
                 st.rerun()
 
     # --------------------------------------------------------
-    # AI 대화
+    # AI 대화 - PDF 첨부는 + 버튼 하나만 사용
     # --------------------------------------------------------
 
     elif S.page == "AI 대화":
@@ -1800,39 +1894,15 @@ with middle:
             "이미지형 PDF는 자동 OCR 처리해요."
         )
 
-        with st.popover("📎 PDF 바로 첨부"):
+        st.caption(
+            "📎 PDF는 아래 채팅 입력창의 "
+            "+ 버튼으로 첨부해 주세요."
+        )
 
-            chat_file = st.file_uploader(
-                "채팅에 사용할 PDF",
-                type=["pdf"],
-                key="chat_pdf_upload"
-            )
-
-            st.caption(
-                "🔒 암호 있는 PDF는 "
-                "암호 없는 버전으로 첨부해 주세요."
-            )
-
-            if st.button(
-                "이 PDF로 질문하기",
-                disabled=chat_file is None
-            ):
-                try:
-                    with st.spinner(
-                        "첨부 PDF 분석 중..."
-                    ):
-                        add_chat_doc(chat_file)
-
-                    S.chat_source_widget = (
-                        "채팅 첨부 PDF"
-                    )
-
-                    st.rerun()
-
-                except Exception as e:
-                    st.error(
-                        f"PDF 첨부 오류: {e}"
-                    )
+        st.caption(
+            "🔒 암호가 있는 PDF는 "
+            "암호 없는 버전으로 첨부해 주세요."
+        )
 
         if "next_chat_source" in S:
             S.chat_source_widget = S.pop(
@@ -1887,6 +1957,7 @@ with middle:
                         m["content"]
                     )
 
+        # 채팅 입력창의 + 버튼으로 PDF 첨부
         entry = st.chat_input(
             "질문을 입력하거나 + 버튼으로 PDF를 첨부하세요",
             accept_file=True,
